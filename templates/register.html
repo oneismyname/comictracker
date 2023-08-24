@@ -1,0 +1,15 @@
+{% from "bootstrap5/form.html" import render_form %}{{ bootstrap.load_css() }}
+{% include "header.html" %}
+
+<div class="container px-4 py-5" id="featured-3">
+    <div class="row">
+        {% with msg = get_flashed_messages() %}
+        {% if msg %}
+        <p class="text-danger">{{ msg[0] }}</p>
+        {% endif %}
+        {% endwith %}
+    </div>
+<div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
+{{ render_form(form, novalidate=True) }}
+</div>
+</div>
