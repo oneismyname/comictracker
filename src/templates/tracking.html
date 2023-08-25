@@ -1,0 +1,15 @@
+{% from "bootstrap5/form.html" import render_form  %} {{ bootstrap.load_css() }}
+{% include 'header.html' %}
+
+<div class="container px-4 py-5" id="featured-3">
+    {{ render_form(form, novalidate=True) }}
+    {% if comics %}
+    <ul>
+        {% for comic in comics %}
+        <li>{{ comic.name }}</li>
+    </ul>
+    {% endfor %}
+    {% endif %}
+
+
+</div>
