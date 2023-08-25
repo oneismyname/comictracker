@@ -2,14 +2,17 @@
 {% include 'header.html' %}
 
 <div class="container px-4 py-5" id="featured-3">
+    {% with msg= get_flashed_messages() %}
+    {% if msg %}
+    <p style="color: red;">{{ msg[0] }}</p>
+    {% endif %}
+    {% endwith %}
     {{ render_form(form, novalidate=True) }}
     {% if comics %}
-    <ul>
+    <ul class="archon-list">
         {% for comic in comics %}
-        <li>{{ comic.name }}</li>
+        <li>{{ comic.name }} <a href="{{ url_for('follow', index=comic.id) }}" class="archon-add-link">Follow</a></li>
     </ul>
     {% endfor %}
     {% endif %}
-
-
 </div>

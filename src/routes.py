@@ -1,11 +1,12 @@
 from flask import render_template, flash, redirect, url_for
 from src import app, login_manager
-from .database import User, db, Comic
+from .database import User, db, Comic, Mapping
 from .forms import RegisterForm, LoginForm, AddForm, SearchForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import current_user, login_user, logout_user
 import requests
 from datetime import datetime
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -90,24 +91,15 @@ def add():
             with app.app_context():
                 info = data["entries"]
                 for item in info:
-                    try:
-                        volume = item["name"].split(" - ")[-1]
-                    except IndexError:
-                        volume = "Tập 1"
-                    if item["edition"] == None:
-                        edition = "Normal"
+                    name = item["name"].split(" - ")[0]
+                    result = db.session.execute(db.Select(Comic).where(Comic.name == name)).scalars().all()
+                    if result:
+                        pass
                     else:
-                        edition = item["edition"]
-                    new_comic = Comic(
-                        name=item["name"].split(" - ")[0],
-                        volume=volume,
-                        release_date=datetime.strptime(item["date"], "%Y-%m-%d"),
-                        price=item["price"],
-                        publisher=item["publisher"]["name"],
-                        edition = edition
-                    )
-                    db.session.add(new_comic)
-                    db.session.commit()
+                        new_comic = Comic(
+                            name=name)
+                        db.session.add(new_comic)
+                        db.session.commit()
         return redirect(url_for("home"))
     return render_template('add.html', user=current_user, form=form)
 
@@ -116,9 +108,28 @@ def add():
 def tracking():
     form = SearchForm()
     if form.validate_on_submit():
-        with app.app_context():
-            search = form.name.data
-            result = db.session.query(Comic).distinct(Comic.id).where(Comic.name.ilike(f'%{search}%')).all()
-            print(result)
-            return render_template('tracking.html', form=form, user=current_user, comics=result)
+        if current_user.is_authenticated:
+            with app.app_context():
+                search = form.name.data
+                result = db.session.query(Comic).where(Comic.name.ilike(f'%{search}%')).all()
+                return render_template('tracking.html', form=form, user=current_user, comics=result)
+        else:
+            flash("You have to login to add")
     return render_template("tracking.html", form=form, user=current_user)
+
+
+@app.route("/follow/<index>", methods=["GET", "POST"])
+def follow(index):
+    with app.app_context():
+        result = db.session.execute(db.Select(Mapping).where(Mapping.comic_id == index and Mapping.user_id == current_user.id)).scalars().all()
+        if result:
+            flash("you already follow this comic")
+            return redirect(url_for('tracking'))
+        else:
+            new_follow = Mapping(
+                user_id = current_user.id,
+                comic_id = index
+            )
+            db.session.add(new_follow)
+            db.session.commit()
+            return redirect(url_for('tracking'))
