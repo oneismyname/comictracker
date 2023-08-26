@@ -11,7 +11,12 @@
     {% if comics %}
     <ul class="archon-list">
         {% for comic in comics %}
-        <li>{{ comic.name }} <a href="{{ url_for('follow', index=comic.id) }}" class="archon-add-link">Follow</a></li>
+        <li>{{ comic.name }}
+            {% if dict[comic.id] == 'TRUE' %}
+            <a href="{{ url_for('unfollow', index=comic.id) }}">Unfollow</a></li>
+            {% else %}
+            <a href="{{ url_for('follow', index=comic.id) }}">Follow</a></li>
+            {% endif %}
     </ul>
     {% endfor %}
     {% endif %}
