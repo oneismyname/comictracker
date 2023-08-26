@@ -2,7 +2,35 @@
 {% include 'header.html' %}
 
 <div class="container px-4 py-5" id="featured-3">
-    {{ render_form(form, novalidate=True) }}
+    <form method="POST" action="{{ url_for('tracking') }}">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-3">
+            <input type="text" class="form-control" id="autocomplete-input1" name="name" list="list-comic"
+                   placeholder="Type to search..." value="{{ form.name.data }}">
+            <datalist id="list-comic"></datalist>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Search</button>
+
+        <script>
+            const inputField = document.getElementById("autocomplete-input1");
+            const suggestionsDatalist = document.getElementById("list-comic");
+            inputField.addEventListener("input", async (event) => {
+                const text = event.target.value;
+                fetch(`/autocomplete?text=${text}`)
+                  .then(response => response.json())
+                  .then(suggestions => {
+                    suggestionsDatalist.innerHTML = "";
+                    suggestions.forEach(suggestion => {
+                      const optionElement = document.createElement("option");
+                      optionElement.value = suggestion;
+                      suggestionsDatalist.appendChild(optionElement);
+                    });
+                  });
+             });
+        </script>
+    </form>
     {% if comics %}
     <ul>
         {% for comic in comics %}
@@ -10,6 +38,4 @@
     </ul>
     {% endfor %}
     {% endif %}
-
-
 </div>
