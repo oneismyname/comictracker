@@ -21,6 +21,7 @@
           <li><a href="#" class="nav-link px-2 text-white">About Us</a></li>
           {% if user.id == 1 %}
           <li><a href="{{ url_for('add') }}" class="nav-link px-2 text-white">Add</a></li>
+          <li><a href="{{ url_for('update') }}" class="nav-link px-2 text-white">Update</a></li>
           {% endif %}
         </ul>
 

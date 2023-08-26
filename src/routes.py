@@ -1,6 +1,6 @@
 from flask import render_template, flash, redirect, url_for
 from src import app, login_manager
-from .database import User, db, Comic, Mapping
+from .database import User, db, Comic, Mapping, Schedule
 from .forms import RegisterForm, LoginForm, AddForm, SearchForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import current_user, login_user, logout_user
@@ -161,5 +161,63 @@ def unfollow(index):
 def profile():
     with app.app_context():
         query = db.session.query(Comic).join(Mapping).filter(Mapping.user_id == current_user.id).all()
-        print(query)
         return render_template("profile.html", list = query, user=current_user)
+
+
+@app.route("/update", methods=["GET", "POST"])
+def update():
+    form = AddForm()
+    if form.validate_on_submit():
+        headers = {
+            'authority': 'pb.tana.moe',
+            'accept': '*/*',
+            'accept-language': 'en-US',
+            'content-type': 'application/json',
+            'origin': 'https://tana.moe',
+            'referer': 'https://tana.moe/',
+            'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-site',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+        }
+
+        params = {
+            'page': '1',
+            'perPage': '500',
+            'skipTotal': '1',
+            'filter': f"publishDate >= '{form.date_start.data}' && publishDate <= '{form.date_end.data}'",
+            'sort': '+publishDate,+name,-edition',
+            'expand': 'title, publisher',
+        }
+
+        response = requests.get('https://pb.tana.moe/api/collections/book_detailed/records', params=params,
+                                headers=headers)
+        data_test = response.json()
+        for data in data_test['items']:
+            with app.app_context():
+                name = data["name"].split(" - ")[0]
+                try:
+                    volume = data["name"].split(" - ")[-1]
+                except:
+                    volume = "Tập 1"
+
+                if data["edition"] == '':
+                    edition = "Normal"
+                else:
+                    edition = data["edition"]
+                datetime_obj = datetime.strptime(data['publishDate'], "%Y-%m-%d %H:%M:%S.%fZ")
+                new_comic = Schedule(
+                    name=name,
+                    volume= volume,
+                    edition=edition,
+                    price=data["price"],
+                    release_date=datetime_obj.date(),
+                    publisher=data["expand"]["publisher"]["name"]
+                )
+                db.session.add(new_comic)
+                db.session.commit()
+        return redirect(url_for("home"))
+    return render_template('update.html', user=current_user, form=form)
