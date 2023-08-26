@@ -1,11 +1,13 @@
-from flask import render_template, flash, redirect, url_for
+from datetime import datetime
+import requests
+from flask import render_template, flash, redirect, url_for, request, jsonify
+from flask_login import current_user, login_user, logout_user
+from werkzeug.security import generate_password_hash, check_password_hash
+
 from src import app, login_manager
 from .database import User, db, Comic, Mapping, Schedule
 from .forms import RegisterForm, LoginForm, AddForm, SearchForm
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import current_user, login_user, logout_user
-import requests
-from datetime import datetime
+
 
 
 @login_manager.user_loader
@@ -69,42 +71,44 @@ def add():
     form = AddForm()
     if form.validate_on_submit():
         headers = {
-            'authority': 'pb.tana.moe',
+            'authority': 'manga.glhf.vn',
             'accept': '*/*',
-            'accept-language': 'en-US',
-            'content-type': 'application/json',
-            'origin': 'https://tana.moe',
-            'referer': 'https://tana.moe/',
+            'accept-language': 'vi-VN,vi;q=0.9,fr-FR;q=0.8,fr;q=0.7,en-US;q=0.6,en;q=0.5',
+            'referer': 'https://manga.glhf.vn/',
             'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': '"Windows"',
             'sec-fetch-dest': 'empty',
             'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-site',
+            'sec-fetch-site': 'same-origin',
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
         }
 
-        params = {
-            'page': '1',
-            'perPage': '500',
-            'skipTotal': '1',
-            'filter': f"publishDate >= '{form.date_start.data}' && publishDate <= '{form.date_end.data}'",
-            'sort': '+publishDate,+name,-edition',
-            'expand': 'title, publisher',
-        }
-
-        response = requests.get('https://pb.tana.moe/api/collections/book_detailed/records', params=params,
-                                headers=headers)
+        response = requests.get(
+            f'https://manga.glhf.vn/api/releases?start={form.date_start.data}&end={form.date_end.data}&order=ascending&',
+            headers=headers,
+        )
         data_test = response.json()
-        for data in data_test['items']:
+        for data in data_test:
             with app.app_context():
-                name = data["name"].split(" - ")[0]
-                result = db.session.execute(db.Select(Comic).where(Comic.name == name)).scalars().all()
-                if result:
-                    pass
-                else:
+                info = data["entries"]
+                for item in info:
+                    try:
+                        volume = item["name"].split(" - ")[-1]
+                    except IndexError:
+                        volume = "Tập 1"
+                    if item["edition"] == None:
+                        edition = "Normal"
+                    else:
+                        edition = item["edition"]
                     new_comic = Comic(
-                        name=name)
+                        name=item["name"].split(" - ")[0],
+                        volume=volume,
+                        release_date=datetime.strptime(item["date"], "%Y-%m-%d"),
+                        price=item["price"],
+                        publisher=item["publisher"]["name"],
+                        edition = edition
+                    )
                     db.session.add(new_comic)
                     db.session.commit()
         return redirect(url_for("home"))
@@ -221,3 +225,12 @@ def update():
                 db.session.commit()
         return redirect(url_for("home"))
     return render_template('update.html', user=current_user, form=form)
+
+
+@app.route("/autocomplete", methods=["GET"])
+def get_suggestions():
+	user_input = request.args.get('text')
+	suggestions = db.session.query(Comic.name).filter(Comic.name.ilike(f'%{user_input}%')).all()
+	suggestions = list(set([item[0] for item in suggestions]))
+	db.session.close()
+	return jsonify(suggestions)
