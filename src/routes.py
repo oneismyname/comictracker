@@ -5,8 +5,9 @@ from flask_login import current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from src import app, login_manager
-from .database import User, db, Comic
+from .database import User, db, Comic, Mapping, Schedule
 from .forms import RegisterForm, LoginForm, AddForm, SearchForm
+
 
 
 @login_manager.user_loader
@@ -118,12 +119,112 @@ def add():
 def tracking():
     form = SearchForm()
     if form.validate_on_submit():
-        with app.app_context():
-            search = form.name.data
-            result = db.session.query(Comic).distinct(Comic.id).where(Comic.name.ilike(f'%{search}%')).all()
-            print(result)
-            return render_template('tracking.html', form=form, user=current_user, comics=result)
+        if current_user.is_authenticated:
+            with app.app_context():
+                search = form.name.data
+                result = db.session.query(Comic).where(Comic.name.ilike(f'%{search}%')).all()
+                follow_or_not = {}
+                for comic in result:
+                    query = Mapping.query.filter(Mapping.comic_id == comic.id, Mapping.user_id == current_user.id).all()
+                    if query:
+                        new_element = {comic.id: "TRUE"}
+                        follow_or_not.update(new_element)
+                    else:
+                        new_element = {comic.id: "FALSE"}
+                        follow_or_not.update(new_element)
+                return render_template('tracking.html', form=form, user=current_user, comics=result, dict = follow_or_not)
+        else:
+            flash("You have to login to add")
     return render_template("tracking.html", form=form, user=current_user)
+
+
+@app.route("/follow/<index>")
+def follow(index):
+    with app.app_context():
+        new_follow = Mapping(
+            user_id = current_user.id,
+            comic_id = index
+        )
+        db.session.add(new_follow)
+        db.session.commit()
+        flash("Successfully follow this comic")
+        return redirect(url_for('tracking'))
+
+
+@app.route("/unfollow/<index>")
+def unfollow(index):
+    with app.app_context():
+        query = Mapping.query.filter(Mapping.comic_id == index, Mapping.user_id == current_user.id).first()
+        db.session.delete(query)
+        db.session.commit()
+        flash("Successfully unfollow this comic")
+        return redirect(url_for('tracking'))
+
+
+@app.route("/profile")
+def profile():
+    with app.app_context():
+        query = db.session.query(Comic).join(Mapping).filter(Mapping.user_id == current_user.id).all()
+        return render_template("profile.html", list = query, user=current_user)
+
+
+@app.route("/update", methods=["GET", "POST"])
+def update():
+    form = AddForm()
+    if form.validate_on_submit():
+        headers = {
+            'authority': 'pb.tana.moe',
+            'accept': '*/*',
+            'accept-language': 'en-US',
+            'content-type': 'application/json',
+            'origin': 'https://tana.moe',
+            'referer': 'https://tana.moe/',
+            'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-site',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+        }
+
+        params = {
+            'page': '1',
+            'perPage': '500',
+            'skipTotal': '1',
+            'filter': f"publishDate >= '{form.date_start.data}' && publishDate <= '{form.date_end.data}'",
+            'sort': '+publishDate,+name,-edition',
+            'expand': 'title, publisher',
+        }
+
+        response = requests.get('https://pb.tana.moe/api/collections/book_detailed/records', params=params,
+                                headers=headers)
+        data_test = response.json()
+        for data in data_test['items']:
+            with app.app_context():
+                name = data["name"].split(" - ")[0]
+                try:
+                    volume = data["name"].split(" - ")[-1]
+                except:
+                    volume = "Tập 1"
+
+                if data["edition"] == '':
+                    edition = "Normal"
+                else:
+                    edition = data["edition"]
+                datetime_obj = datetime.strptime(data['publishDate'], "%Y-%m-%d %H:%M:%S.%fZ")
+                new_comic = Schedule(
+                    name=name,
+                    volume= volume,
+                    edition=edition,
+                    price=data["price"],
+                    release_date=datetime_obj.date(),
+                    publisher=data["expand"]["publisher"]["name"]
+                )
+                db.session.add(new_comic)
+                db.session.commit()
+        return redirect(url_for("home"))
+    return render_template('update.html', user=current_user, form=form)
 
 
 @app.route("/autocomplete", methods=["GET"])

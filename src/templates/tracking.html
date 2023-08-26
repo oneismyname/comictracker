@@ -2,7 +2,12 @@
 {% include 'header.html' %}
 
 <div class="container px-4 py-5" id="featured-3">
-    <form method="POST" action="{{ url_for('tracking') }}">
+    {% with msg= get_flashed_messages() %}
+    {% if msg %}
+    <p style="color: red;">{{ msg[0] }}</p>
+    {% endif %}
+    {% endwith %}
+        <form method="POST" action="{{ url_for('tracking') }}">
         {{ form.hidden_tag() }}
 
         <div class="mb-3">
@@ -32,10 +37,17 @@
         </script>
     </form>
     {% if comics %}
-    <ul>
+    <ul class="archon-list">
         {% for comic in comics %}
-        <li>{{ comic.name }}</li>
+        <li>{{ comic.name }}
+            {% if dict[comic.id] == 'TRUE' %}
+            <a href="{{ url_for('unfollow', index=comic.id) }}">Unfollow</a></li>
+            {% else %}
+            <a href="{{ url_for('follow', index=comic.id) }}">Follow</a></li>
+            {% endif %}
     </ul>
     {% endfor %}
     {% endif %}
+
+
 </div>

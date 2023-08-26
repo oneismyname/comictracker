@@ -21,6 +21,7 @@
           <li><a href="#" class="nav-link px-2 text-white">About Us</a></li>
           {% if user.id == 1 %}
           <li><a href="{{ url_for('add') }}" class="nav-link px-2 text-white">Add</a></li>
+          <li><a href="{{ url_for('update') }}" class="nav-link px-2 text-white">Update</a></li>
           {% endif %}
         </ul>
 
@@ -29,7 +30,7 @@
         </form>
         {% if user.is_authenticated %}
           <div class="text-end">
-          <a href=#><button type="button" class="btn btn-success me-2">{{ user.name }}</button></a>
+          <a href="{{ url_for('profile') }}"><button type="button" class="btn btn-success me-2">{{ user.name }}</button></a>
           <a href="{{ url_for('logout') }}"><button type="button" class="btn btn-outline-light me-2">Logout</button></a>
         </div>
           {% else %}
