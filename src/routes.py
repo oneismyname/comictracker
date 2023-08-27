@@ -229,8 +229,10 @@ def update():
 
 @app.route("/autocomplete", methods=["GET"])
 def get_suggestions():
-	user_input = request.args.get('text')
-	suggestions = db.session.query(Comic.name).filter(Comic.name.ilike(f'%{user_input}%')).all()
-	suggestions = list(set([item[0] for item in suggestions]))
-	db.session.close()
-	return jsonify(suggestions)
+    user_input = request.args.get('text')
+    suggestions = db.session.query(Comic.name).filter(
+        Comic.name.ilike(f'%{user_input}%')
+    ).all()
+    suggestions = sorted(list(set([item[0] for item in suggestions])))
+    db.session.close()
+    return jsonify(suggestions)

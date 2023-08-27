@@ -7,7 +7,7 @@
     <p style="color: red;">{{ msg[0] }}</p>
     {% endif %}
     {% endwith %}
-        <form method="POST" action="{{ url_for('tracking') }}">
+    <form method="POST" action="{{ url_for('tracking') }}">
         {{ form.hidden_tag() }}
 
         <div class="mb-3">
@@ -19,21 +19,32 @@
         <button type="submit" class="btn btn-primary">Search</button>
 
         <script>
+            document.addEventListener("DOMContentLoaded", () => {
             const inputField = document.getElementById("autocomplete-input1");
             const suggestionsDatalist = document.getElementById("list-comic");
-            inputField.addEventListener("input", async (event) => {
-                const text = event.target.value;
-                fetch(`/autocomplete?text=${text}`)
-                  .then(response => response.json())
-                  .then(suggestions => {
-                    suggestionsDatalist.innerHTML = "";
-                    suggestions.forEach(suggestion => {
-                      const optionElement = document.createElement("option");
-                      optionElement.value = suggestion;
-                      suggestionsDatalist.appendChild(optionElement);
+
+            if (inputField && suggestionsDatalist) {
+                inputField.addEventListener("input", async (event) => {
+                    const text = event.target.value;
+                    try {
+                        const response = await fetch(`/autocomplete?text=${text}`);
+                        if (!response.ok) {
+                            throw new Error("Network response was not ok");
+                        }
+                        const suggestions = await response.json();
+
+                        suggestionsDatalist.innerHTML = "";
+                        suggestions.forEach(suggestion => {
+                            const optionElement = document.createElement("option");
+                            optionElement.value = suggestion;
+                            suggestionsDatalist.appendChild(optionElement);
+                        });
+                    } catch (error) {
+                        console.error("Error fetching autocomplete suggestions:", error);
+                    }
                     });
-                  });
-             });
+                }
+            });
         </script>
     </form>
     {% if comics %}
@@ -42,9 +53,9 @@
         <li>{{ comic.name }}
             {% if dict[comic.id] == 'TRUE' %}
             <a href="{{ url_for('unfollow', index=comic.id) }}">Unfollow</a></li>
-            {% else %}
-            <a href="{{ url_for('follow', index=comic.id) }}">Follow</a></li>
-            {% endif %}
+        {% else %}
+        <a href="{{ url_for('follow', index=comic.id) }}">Follow</a></li>
+        {% endif %}
     </ul>
     {% endfor %}
     {% endif %}
