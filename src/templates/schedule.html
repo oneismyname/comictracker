@@ -1,0 +1,9 @@
+{% include 'header.html' %}
+
+<div class="container px-4 py-5" id="featured-3">
+    <ul>{% for item in list %}
+        <li>{{ item.name }} {{ item.edition }} {{ item.release_date }}  {{ item.price }}</li>
+            <a href="{{ url_for('check', index=item.id) }}">Bought</a></li>
+    {% endfor %}
+    </ul>
+</div>
