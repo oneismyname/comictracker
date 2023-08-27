@@ -4,14 +4,15 @@ from flask import render_template, flash, redirect, url_for, request, jsonify
 from flask_login import current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import smtplib
+import os
 
 from src import app, login_manager
 from .database import User, db, Comic, Mapping, Schedule, Checking
 from .forms import RegisterForm, LoginForm, AddForm, SearchForm
 
 
-my_email = "dlegendthienan@gmail.com"
-password = "boxoivexootflbvh"
+my_email = os.environ.get("email")
+password = os.environ.get("password")
 
 @login_manager.user_loader
 def load_user(user_id):

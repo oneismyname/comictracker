@@ -53,9 +53,9 @@
         <li>{{ comic.name }}
             {% if dict[comic.id] == 'TRUE' %}
             <a href="{{ url_for('unfollow', index=comic.id) }}">Unfollow</a></li>
-        {% else %}
-        <a href="{{ url_for('follow', index=comic.id) }}">Follow</a></li>
-        {% endif %}
+            {% else %}
+            <a href="{{ url_for('follow', index=comic.id) }}">Follow</a></li>
+            {% endif %}
     </ul>
     {% endfor %}
     {% endif %}
