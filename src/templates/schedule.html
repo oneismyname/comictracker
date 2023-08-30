@@ -47,11 +47,11 @@
             <p class="card-text">{{ comic.price }}</p>
             <div class="wrap">
               <div>
-                <button class="subscribeButton btn btn-info" data-comic-id="{{ comic.id }}" data-subscribed="{% if dict_2[comic.id] == 'TRUE' %}true{% else %}false{% endif %}">
+                <button class="subscribeButton btn btn-info" data-comic-id="{{ comic.id }}" data-check="{% if dict_2[comic.id] == 'TRUE' %}true{% else %}false{% endif %}">
                   {% if dict_2[comic.id] == 'TRUE' %}
-                    Unsubscribe
+                    UnCheck
                   {% else %}
-                    Subscribe
+                    Check
                   {% endif %}
                 </button>
                 <p class="card-text edition">{{ comic.edition }}</p>

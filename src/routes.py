@@ -112,12 +112,17 @@ def add():
         for data in data_test['items']:
             with app.app_context():
                 name = data["name"].split(" - ")[0]
+                if data['baseCover'] == []:
+                    img = "https://img.freepik.com/free-vector/flat-comic-style-background_23-2148882944.jpg?w=1380&t=st=1693394293~exp=1693394893~hmac=3dcc1ace1c32ce8b99a53c456a35a0160017b9893d8c078e34d29bc3d5d1d1bf"
+                else:
+                    img = f"https://image.tana.moe/unsafe/320x0/filters:quality(90)/{data['collectionId']}/{data['id']}/{data['baseCover'][0]}"
                 result = db.session.execute(db.Select(Comic).where(Comic.name == name)).scalars().all()
                 if result:
                     pass
                 else:
                     new_comic = Comic(
-                        name=name)
+                        name=name,
+                        img_cover=img)
                     db.session.add(new_comic)
                     db.session.commit()
         return redirect(url_for("home"))
@@ -147,27 +152,26 @@ def tracking():
     return render_template("tracking.html", form=form, user=current_user)
 
 
-@app.route("/follow/<index>")
-def follow(index):
-    with app.app_context():
-        new_follow = Mapping(
-            user_id = current_user.id,
-            comic_id = index
-        )
-        db.session.add(new_follow)
-        db.session.commit()
-        flash("Successfully follow this comic")
-        return redirect(url_for('tracking'))
-
-
-@app.route("/unfollow/<index>")
-def unfollow(index):
-    with app.app_context():
-        query = Mapping.query.filter(Mapping.comic_id == index, Mapping.user_id == current_user.id).first()
-        db.session.delete(query)
-        db.session.commit()
-        flash("Successfully unfollow this comic")
-        return redirect(url_for('tracking'))
+@app.route("/follow", methods=["POST"])
+def follow():
+    data = request.get_json()
+    comic_id = data.get("comicId")
+    if data.get("Follow"):
+        with app.app_context():
+            new_follow = Mapping(
+                user_id = current_user.id,
+                comic_id = comic_id
+            )
+            db.session.add(new_follow)
+            db.session.commit()
+        response = {"message": "Follow successfully!", "buttonText": "UnFollow"}
+    else:
+        with app.app_context():
+            query = Mapping.query.filter(Mapping.comic_id == comic_id, Mapping.user_id == current_user.id).first()
+            db.session.delete(query)
+            db.session.commit()
+        response = {"message": "UnFollow successfully!", "buttonText": "Follow"}
+    return jsonify(response)
 
 
 @app.route("/profile")
@@ -189,8 +193,9 @@ def update():
                     volume = data["name"].split(" - ")[-1]
                 except IndexError:
                     volume = "Tập 1"
-
-                if data["edition"] == '':
+                if data["digital"]:
+                    edition = "Digital"
+                elif data['edition'] == "":
                     edition = "Normal"
                 else:
                     edition = data["edition"]
@@ -309,7 +314,8 @@ def schedule():
 def check():
     data = request.get_json()
     comic_id = data.get("comicId")
-    if data.get("subscribed"):
+    print(data.get("Check"))
+    if data.get("Check"):
         with app.app_context():
             query = Schedule.query.filter(Schedule.id == comic_id).first()
             new = Checking(
@@ -319,13 +325,13 @@ def check():
                 price=query.price)
             db.session.add(new)
             db.session.commit()
-        response = {"message": "Subscribed successfully!", "buttonText": "Unsubscribe"}
+        response = {"message": "Check successfully!", "buttonText": "UnCheck"}
     else:
         with app.app_context():
             query = Checking.query.filter(Checking.schedule_id == comic_id, Checking.user_id == current_user.id).first()
             db.session.delete(query)
             db.session.commit()
-        response = {"message": "Unsubscribed successfully!", "buttonText": "Subscribe"}
+        response = {"message": "UnCheck successfully!", "buttonText": "Check"}
 
     return jsonify(response)
 

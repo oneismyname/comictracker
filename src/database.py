@@ -21,6 +21,7 @@ class User(UserMixin, db.Model):
 class Comic(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(250), nullable=False)
+    img_cover = db.Column(db.String(1000))
     follower = db.relationship('Mapping', backref='comic')
     schedule_location = db.relationship('Schedule', backref='schedule_location')
 

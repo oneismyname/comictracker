@@ -18,47 +18,32 @@
 
         <button type="submit" class="btn btn-primary">Search</button>
 
-        <script>
-            document.addEventListener("DOMContentLoaded", () => {
-            const inputField = document.getElementById("autocomplete-input1");
-            const suggestionsDatalist = document.getElementById("list-comic");
-
-            if (inputField && suggestionsDatalist) {
-                inputField.addEventListener("input", async (event) => {
-                    const text = event.target.value;
-                    try {
-                        const response = await fetch(`/autocomplete?text=${text}`);
-                        if (!response.ok) {
-                            throw new Error("Network response was not ok");
-                        }
-                        const suggestions = await response.json();
-
-                        suggestionsDatalist.innerHTML = "";
-                        suggestions.forEach(suggestion => {
-                            const optionElement = document.createElement("option");
-                            optionElement.value = suggestion;
-                            suggestionsDatalist.appendChild(optionElement);
-                        });
-                    } catch (error) {
-                        console.error("Error fetching autocomplete suggestions:", error);
-                    }
-                    });
-                }
-            });
-        </script>
     </form>
+<div class="container my-5 ">
     {% if comics %}
-    <ul class="archon-list">
-        {% for comic in comics %}
-        <li>{{ comic.name }}
-            {% if dict[comic.id] == 'TRUE' %}
-            <a href="{{ url_for('unfollow', index=comic.id) }}">Unfollow</a></li>
-            {% else %}
-            <a href="{{ url_for('follow', index=comic.id) }}">Follow</a></li>
-            {% endif %}
-    </ul>
-    {% endfor %}
-    {% endif %}
-
-
+    <div class="row cards">
+    {% for comic in comics %}
+    <div class="col-2 my-2">
+      <div class="card">
+        <img class="card-img-top" src="{{ comic.img_cover }}" alt="Card image cap">
+      </div>
+      <div class="text-container">
+        <p class="card-text">{{ comic.name }}</p>
+        <div class="wrap">
+          <div>
+            <button class="followButton btn btn-info" data-comic-id="{{ comic.id }}" data-follow="{% if dict[comic.id] == 'TRUE' %}true{% else %}false{% endif %}">
+              {% if dict[comic.id] == 'TRUE' %}
+                UnFollow
+              {% else %}
+                Follow
+              {% endif %}
+            </button>
+          </div>
+        </div>
+        <div id="resultMessage_1"></div>
+      </div>
+    </div>
+  {% endfor %}
+{% endif %}
+</div>
 </div>
