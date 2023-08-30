@@ -1,1 +1,67 @@
 {% include 'header.html' %}
+
+<div class="container">
+
+  <h2>Schedule</h2>
+  <form action="/schedule" method="post">
+    <label for="month-select">Chọn tháng:</label>
+    <select name="selected_month" id="month-select">
+      <option value="01">Tháng 01</option>
+      <option value="02">Tháng 02</option>
+      <option value="03">Tháng 03</option>
+      <option value="04">Tháng 04</option>
+      <option value="05">Tháng 05</option>
+      <option value="06">Tháng 06</option>
+      <option value="07">Tháng 07</option>
+      <option value="08">Tháng 08</option>
+      <option value="09">Tháng 09</option>
+      <option value="10">Tháng 10</option>
+      <option value="11">Tháng 11</option>
+      <option value="12">Tháng 12</option>
+    </select>
+
+    <label for="year-select">Chọn năm:</label>
+    <select name="selected_year" id="year-select">
+      <option value="2020">2020</option>
+      <option value="2021">2021</option>
+      <option value="2022">2022</option>
+      <option value="2023">2023</option>
+      <option value="2024">2024</option>
+    </select>
+
+    <input type="submit" value="Select">
+  </form>
+
+  <div class="container my-5 ">
+        {% for key, values in dict_1.items() %}
+    <div class="row text my-2">{{ key }}</div>
+    <div class="row cards">
+      {% for comic in values %}
+        <div class="col-2 my-2">
+          <div class="card">
+            <img class="card-img-top" src="{{ comic.img }}" alt="Card image cap">
+          </div>
+          <div class="text-container">
+            <p class="card-text">{{ comic.name }}</p>
+            <p class="card-text">{{ comic.volume }}</p>
+            <p class="card-text">{{ comic.price }}</p>
+            <div class="wrap">
+              <div>
+                <button class="subscribeButton btn btn-info" data-comic-id="{{ comic.id }}" data-subscribed="{% if dict_2[comic.id] == 'TRUE' %}true{% else %}false{% endif %}">
+                  {% if dict_2[comic.id] == 'TRUE' %}
+                    Unsubscribe
+                  {% else %}
+                    Subscribe
+                  {% endif %}
+                </button>
+                <p class="card-text edition">{{ comic.edition }}</p>
+              </div>
+            </div>
+            <div id="resultMessage"></div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+  </div>
+</div>

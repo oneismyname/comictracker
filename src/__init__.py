@@ -2,7 +2,7 @@ from flask import Flask
 from flask_bootstrap import Bootstrap5
 from flask_login import LoginManager
 
-
+import src.local_func
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "thisismysecretkey"
 Bootstrap5(app)
@@ -21,4 +21,5 @@ with app.app_context():
 
 
 import src.routes
+
 

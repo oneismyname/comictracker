@@ -5,6 +5,7 @@ from flask_login import current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import smtplib
 import os
+from sqlalchemy import func, text
 
 from src import app, login_manager
 from .database import User, db, Comic, Mapping, Schedule, Checking
@@ -13,6 +14,39 @@ from .forms import RegisterForm, LoginForm, AddForm, SearchForm
 
 my_email = os.environ.get("email")
 password = os.environ.get("password")
+
+
+def take_data(start_day, end_day):
+    headers = {
+                'authority': 'pb.tana.moe',
+                'accept': '*/*',
+                'accept-language': 'en-US',
+                'content-type': 'application/json',
+                'origin': 'https://tana.moe',
+                'referer': 'https://tana.moe/',
+                'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"Windows"',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'same-site',
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+            }
+
+    params = {
+        'page': '1',
+        'perPage': '500',
+        'skipTotal': '1',
+        'filter': f"publishDate >= '{start_day}' && publishDate <= '{end_day}'",
+        'sort': '+publishDate,+name,-edition',
+        'expand': 'title, publisher',
+    }
+
+    response = requests.get('https://pb.tana.moe/api/collections/book_detailed/records', params=params,
+                            headers=headers)
+    data_test = response.json()
+    return data_test
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -74,34 +108,7 @@ def logout():
 def add():
     form = AddForm()
     if form.validate_on_submit():
-        headers = {
-            'authority': 'pb.tana.moe',
-            'accept': '*/*',
-            'accept-language': 'en-US',
-            'content-type': 'application/json',
-            'origin': 'https://tana.moe',
-            'referer': 'https://tana.moe/',
-            'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-site',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-        }
-
-        params = {
-            'page': '1',
-            'perPage': '500',
-            'skipTotal': '1',
-            'filter': f"publishDate >= '{form.date_start.data}' && publishDate <= '{form.date_end.data}'",
-            'sort': '+publishDate,+name,-edition',
-            'expand': 'title, publisher',
-        }
-
-        response = requests.get('https://pb.tana.moe/api/collections/book_detailed/records', params=params,
-                                headers=headers)
-        data_test = response.json()
+        data_test = take_data(form.date_start.data, form.date_end.data)
         for data in data_test['items']:
             with app.app_context():
                 name = data["name"].split(" - ")[0]
@@ -174,34 +181,7 @@ def profile():
 def update():
     form = AddForm()
     if form.validate_on_submit():
-        headers = {
-            'authority': 'pb.tana.moe',
-            'accept': '*/*',
-            'accept-language': 'en-US',
-            'content-type': 'application/json',
-            'origin': 'https://tana.moe',
-            'referer': 'https://tana.moe/',
-            'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-site',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-        }
-
-        params = {
-            'page': '1',
-            'perPage': '500',
-            'skipTotal': '1',
-            'filter': f"publishDate >= '{form.date_start.data}' && publishDate <= '{form.date_end.data}'",
-            'sort': '+publishDate,+name,-edition',
-            'expand': 'title, publisher',
-        }
-
-        response = requests.get('https://pb.tana.moe/api/collections/book_detailed/records', params=params,
-                                headers=headers)
-        data_test = response.json()
+        data_test = take_data(form.date_start.data, form.date_end.data)
         for data in data_test['items']:
             with app.app_context():
                 name = data["name"].split(" - ")[0]
@@ -214,7 +194,12 @@ def update():
                     edition = "Normal"
                 else:
                     edition = data["edition"]
+                if data['baseCover'] == []:
+                    img = "https://img.freepik.com/free-vector/flat-comic-style-background_23-2148882944.jpg?w=1380&t=st=1693394293~exp=1693394893~hmac=3dcc1ace1c32ce8b99a53c456a35a0160017b9893d8c078e34d29bc3d5d1d1bf"
+                else:
+                    img = f"https://image.tana.moe/unsafe/320x0/filters:quality(90)/{data['collectionId']}/{data['id']}/{data['baseCover'][0]}"
                 datetime_obj = datetime.strptime(data['publishDate'], "%Y-%m-%d %H:%M:%S.%fZ")
+                query = Comic.query.filter(Comic.name.like(name)).first()
                 result = Schedule.query.filter(
                     Schedule.name == name, Schedule.release_date == datetime_obj.date(), Schedule.edition == edition, Schedule.volume == volume).all()
                 if result:
@@ -222,11 +207,13 @@ def update():
                 else:
                     new_comic = Schedule(
                         name=name,
+                        comic_id= query.id,
                         volume= volume,
                         edition=edition,
                         price=data["price"],
                         release_date=datetime_obj.date(),
-                        publisher=data["expand"]["publisher"]["name"]
+                        publisher=data["expand"]["publisher"]["name"],
+                        img=img
                     )
                     db.session.add(new_comic)
                     db.session.commit()
@@ -253,39 +240,105 @@ def inform():
         for comic in comics:
             schedule = db.session.query(Schedule).filter(Schedule.name == comic.name, Schedule.release_date == datetime.today().date()).all()
             for item in schedule:
-                new_obj = {item.name: item.price}
+                new_obj = {item.name: [item.price, item.volume]}
                 dict.update(new_obj)
         msg = ""
         for key, values in dict.items():
-            para = f"{key} is released today {datetime.today().date()}. Price: {values}\n"
+            para = f"{key} - volume {values[1].split(' ')[-1]} is released today {datetime.today().date()}. Price: {values[0]}\n"
             msg += para
-        with smtplib.SMTP("smtp.gmail.com") as connection:
-            connection.starttls()
-            connection.login(user=my_email, password=password)
-            connection.sendmail(
-                from_addr=my_email,
-                to_addrs=current_user.email,
-                msg=f"Subject: BUY NOW\n\n{msg}"
-            )
-        return redirect(url_for('home'))
+        if msg == "":
+            flash("No comic release today")
+            return redirect(url_for('home'))
+        else:
+            with smtplib.SMTP("smtp.gmail.com") as connection:
+                connection.starttls()
+                connection.login(user=my_email, password=password)
+                connection.sendmail(
+                    from_addr=my_email,
+                    to_addrs=current_user.email,
+                    msg=f"Subject: BUY NOW\n\n{msg}"
+                )
+            return redirect(url_for('home'))
 
 
-@app.route("/schedule")
+@app.route("/schedule", methods=["GET","POST"])
 def schedule():
-    query = Schedule.query.all()
-    return render_template("schedule.html", user=current_user, list= query)
+    if request.method == "POST":
+        selected_month = request.form['selected_month']
+        selected_year = request.form['selected_year']
+        selected_date = datetime.strptime(f"{selected_year}-{selected_month}", "%Y-%m")
+        strip_date = datetime.strftime(selected_date, "%Y-%m")
+        query_1 = Schedule.query.filter(func.strftime('%Y-%m', Schedule.release_date) == strip_date).all()
+        query_2 = db.session.query(Schedule.release_date).filter(
+            func.strftime('%Y-%m', Schedule.release_date) == strip_date).distinct().all()
+        dict = {}
+        for item in query_2:
+            query_3 = Schedule.query.filter(Schedule.release_date == item.release_date).all()
+            new_dict = {item.release_date: query_3}
+            dict.update(new_dict)
+        bought_or_not = {}
+        for comic in query_1:
+            result = Checking.query.filter(Checking.schedule_id == comic.id, Checking.user_id == current_user.id).all()
+            if result:
+                new_element = {comic.id: "TRUE"}
+                bought_or_not.update(new_element)
+            else:
+                new_element = {comic.id: "FALSE"}
+                bought_or_not.update(new_element)
+        return render_template("schedule.html", user=current_user, dict_1= dict, dict_2= bought_or_not)
+    query_1 = Schedule.query.filter(func.strftime('%Y-%m', Schedule.release_date) == datetime.today().strftime('%Y-%m')).all()
+    query_2 = db.session.query(Schedule.release_date).filter(func.strftime('%Y-%m', Schedule.release_date) == datetime.today().strftime('%Y-%m')).distinct().all()
+    dict = {}
+    for item in query_2:
+        query_3 = Schedule.query.filter(Schedule.release_date == item.release_date).all()
+        new_dict = {item.release_date : query_3}
+        dict.update(new_dict)
+    bought_or_not = {}
+    for comic in query_1:
+        result = Checking.query.filter(Checking.schedule_id == comic.id, Checking.user_id == current_user.id).all()
+        if result:
+            new_element = {comic.id: "TRUE"}
+            bought_or_not.update(new_element)
+        else:
+            new_element = {comic.id: "FALSE"}
+            bought_or_not.update(new_element)
+    return render_template("schedule.html", user=current_user, dict_1= dict, dict_2= bought_or_not)
 
 
-@app.route("/check/<index>")
-def check(index):
-    with app.app_context():
-        query = Schedule.query.filter(Schedule.id == index).first()
-        new = Checking(
-            user_id = current_user.id,
-            schedule_id = index,
-            bought=bool(True),
-            price= query.price
-        )
-        db.session.add(new)
-        db.session.commit()
-    return redirect(url_for('schedule'))
+@app.route("/check", methods=["POST"])
+def check():
+    data = request.get_json()
+    comic_id = data.get("comicId")
+    if data.get("subscribed"):
+        with app.app_context():
+            query = Schedule.query.filter(Schedule.id == comic_id).first()
+            new = Checking(
+                user_id=current_user.id,
+                schedule_id=comic_id,
+                bought=True,
+                price=query.price)
+            db.session.add(new)
+            db.session.commit()
+        response = {"message": "Subscribed successfully!", "buttonText": "Unsubscribe"}
+    else:
+        with app.app_context():
+            query = Checking.query.filter(Checking.schedule_id == comic_id, Checking.user_id == current_user.id).first()
+            db.session.delete(query)
+            db.session.commit()
+        response = {"message": "Unsubscribed successfully!", "buttonText": "Subscribe"}
+
+    return jsonify(response)
+
+
+@app.route("/finance")
+def finance():
+    result = db.session.query(
+        func.strftime('%Y-%m', Schedule.release_date).label('month'),
+        func.sum(Checking.price).label('total_amount')
+    ).join(Checking).filter(
+        Checking.user_id == current_user.id,
+        Checking.bought == True
+    ).group_by('month').order_by('month').all()
+    month = [item[0] for item in result]
+    amount = [item[1] for item in result]
+    return render_template('finance.html', user=current_user, month=month, amount=amount)

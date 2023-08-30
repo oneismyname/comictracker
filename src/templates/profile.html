@@ -1,7 +1,21 @@
 {% include 'header.html' %}
-<div class="container px-4 py-5" id="featured-3">
-    <ul>{% for item in list %}
-        <li>{{ item.name }}</li>
+<div class="container">
+  <h2>Striped Rows</h2>
+  <p>The .table-striped class adds zebra-stripes to a table:</p>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for comic in list %}
+      <tr>
+        <td>{{ comic.id }}</td>
+        <td>{{ comic.name }}</td>
+      </tr>
     {% endfor %}
-        </ul>
+    </tbody>
+  </table>
 </div>

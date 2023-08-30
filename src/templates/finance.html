@@ -1,0 +1,34 @@
+{% include 'header.html' %}
+<body>
+<div class="container">
+    <div>
+        <h2>Your money spend for comic in a month</h2>
+    </div>
+<canvas id="myChart" style="width:100%;max-width:600px"></canvas>
+
+<script>
+var xValues = {{ month | tojson }};
+var yValues = {{ amount | tojson }};
+var barColors = ["blue", "blue","blue","blue","blue","blue","blue","blue",,"blue","blue","blue","blue"];
+
+new Chart("myChart", {
+  type: "bar",
+  data: {
+    labels: xValues,
+    datasets: [{
+      backgroundColor: barColors,
+      data: yValues
+    }]
+  },
+  options: {
+    legend: {display: false},
+    title: {
+      display: true,
+      text: "Your money spend for comic in a month"
+    }
+  }
+});
+</script>
+</div>
+</body>
+</html>

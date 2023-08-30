@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <title>ComicTracker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='./script/script.js') }}"></script>
+    <link href="{{ url_for('static', filename='./css/style.css') }}" rel="stylesheet">
 </head>
 <body>
 <header class="p-3 text-bg-dark">
@@ -17,7 +21,7 @@
           <li><a href="{{ url_for('home') }}" class="nav-link px-2 text-secondary">Home</a></li>
           <li><a href="{{ url_for('tracking') }}" class="nav-link px-2 text-white">Tracking</a></li>
           <li><a href="{{ url_for('schedule') }}" class="nav-link px-2 text-white">Schedule</a></li>
-          <li><a href="#" class="nav-link px-2 text-white">Finance</a></li>
+          <li><a href="{{ url_for('finance') }}" class="nav-link px-2 text-white">Finance</a></li>
           <li><a href="{{ url_for('inform') }}" class="nav-link px-2 text-white">Inform</a></li>
           {% if user.id == 1 %}
           <li><a href="{{ url_for('add') }}" class="nav-link px-2 text-white">Add</a></li>
