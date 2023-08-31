@@ -2,9 +2,28 @@
 <body>
 <div class="container">
     <div>
-        <h2>Your money spend for comic in a month</h2>
+        <h2>The amount of money you use to buy comics is on a month</h2>
     </div>
-<canvas id="myChart" style="width:100%;max-width:600px"></canvas>
+    <div class="row">
+        <div class="col-8">
+          <canvas id="myChart" style="max-width: 600px;"></canvas>
+        </div>
+        <div class="col-4">
+            <form action="/finance" method="post">
+                <label for="year-select">Chọn năm:</label>
+                <select name="selected_year" id="year-select">
+                  <option value="2020">2020</option>
+                  <option value="2021">2021</option>
+                  <option value="2022">2022</option>
+                  <option value="2023">2023</option>
+                  <option value="2024">2024</option>
+                </select>
+                <input type="submit" value="Select">
+            </form>
+            <p>Total amout is {{ total_amount }} Đ</p>
+            <p>Total amout is {{ year_amount }} Đ in {{ selected_year }}</p>
+        </div>
+    </div>
 
 <script>
 var xValues = {{ month | tojson }};
@@ -31,4 +50,3 @@ new Chart("myChart", {
 </script>
 </div>
 </body>
-</html>

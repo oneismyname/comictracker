@@ -18,20 +18,14 @@ password = os.environ.get("password")
 
 def take_data(start_day, end_day):
     headers = {
-                'authority': 'pb.tana.moe',
-                'accept': '*/*',
-                'accept-language': 'en-US',
-                'content-type': 'application/json',
-                'origin': 'https://tana.moe',
-                'referer': 'https://tana.moe/',
-                'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
-                'sec-ch-ua-mobile': '?0',
-                'sec-ch-ua-platform': '"Windows"',
-                'sec-fetch-dest': 'empty',
-                'sec-fetch-mode': 'cors',
-                'sec-fetch-site': 'same-site',
-                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-            }
+        'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
+        'Content-Type': 'application/json',
+        'Referer': 'https://tana.moe/',
+        'Accept-Language': 'en-US',
+        'sec-ch-ua-mobile': '?0',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+        'sec-ch-ua-platform': '"Windows"',
+    }
 
     params = {
         'page': '1',
@@ -42,11 +36,85 @@ def take_data(start_day, end_day):
         'expand': 'title, publisher',
     }
 
-    response = requests.get('https://pb.tana.moe/api/collections/book_detailed/records', params=params,
-                            headers=headers)
+    response = requests.get('https://pb.tana.moe/api/collections/book_detailed/records', params=params, headers=headers)
     data_test = response.json()
     return data_test
 
+
+def update_comic_schedule(data_test):
+    for data in data_test['items']:
+        with app.app_context():
+            name = data["name"].split(" - ")[0]
+            try:
+                volume = data["name"].split(" - ")[-1]
+            except IndexError:
+                volume = "Tập 1"
+            if data["digital"]:
+                edition = "Digital"
+            elif data['edition'] == "":
+                edition = "Normal"
+            else:
+                edition = data["edition"]
+            if data['baseCover'] == []:
+                img = "https://img.freepik.com/free-vector/flat-comic-style-background_23-2148882944.jpg?w=1380&t=st=1693394293~exp=1693394893~hmac=3dcc1ace1c32ce8b99a53c456a35a0160017b9893d8c078e34d29bc3d5d1d1bf"
+            else:
+                img = f"https://image.tana.moe/unsafe/320x0/filters:quality(90)/{data['collectionId']}/{data['id']}/{data['baseCover'][0]}"
+            datetime_obj = datetime.strptime(data['publishDate'], "%Y-%m-%d %H:%M:%S.%fZ")
+            query = Comic.query.filter(Comic.name.like(name)).first()
+            result = Schedule.query.filter(
+                Schedule.name == name, Schedule.release_date == datetime_obj.date(), Schedule.edition == edition,
+                Schedule.volume == volume).first()
+            if result:
+                if data['baseCover'] != []:
+                    result.img = f"https://image.tana.moe/unsafe/320x0/filters:quality(90)/{data['collectionId']}/{data['id']}/{data['baseCover'][0]}"
+                else:
+                    continue
+            else:
+                new_comic = Schedule(
+                    name=name,
+                    comic_id=query.id,
+                    volume=volume,
+                    edition=edition,
+                    price=data["price"],
+                    release_date=datetime_obj.date(),
+                    publisher=data["expand"]["publisher"]["name"],
+                    img=img
+                )
+                db.session.add(new_comic)
+                db.session.commit()
+
+
+def month_schedule(query):
+    dict = {}
+    for item in query:
+        query_3 = Schedule.query.filter(Schedule.release_date == item.release_date).all()
+        new_dict = {item.release_date: query_3}
+        dict.update(new_dict)
+    return dict
+
+
+def bought_or_not(dict):
+    bought_or_not = {}
+    for value in dict.values():
+        for comic in value:
+            result = Checking.query.filter(Checking.schedule_id == comic.id, Checking.user_id == current_user.id).all()
+            if result:
+                new_element = {comic.id: "TRUE"}
+                bought_or_not.update(new_element)
+            else:
+                new_element = {comic.id: "FALSE"}
+                bought_or_not.update(new_element)
+    return bought_or_not
+
+
+def selected_month_shedule():
+    selected_month = request.form['selected_month']
+    selected_year = request.form['selected_year']
+    selected_date = datetime.strptime(f"{selected_year}-{selected_month}", "%Y-%m")
+    strip_date = datetime.strftime(selected_date, "%Y-%m")
+    query = db.session.query(Schedule.release_date).filter(
+        func.strftime('%Y-%m', Schedule.release_date) == strip_date).distinct().all()
+    return query
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -76,7 +144,7 @@ def register():
                     )
                     db.session.add(new_user)
                     db.session.commit()
-                    return redirect(url_for('home'))
+                    return redirect(url_for('login'))
             else:
                 flash("Your password is not match")
     return render_template("register.html", form=form, user=current_user)
@@ -85,7 +153,7 @@ def register():
 @app.route("/login", methods=["GET","POST"])
 def login():
     form = LoginForm()
-    if form.validate_on_submit():
+    if request.method == "POST":
         result = db.session.execute(db.select(User).where(User.email == form.email.data)).scalar()
         if result:
             if check_password_hash(result.password, form.password.data):
@@ -116,9 +184,12 @@ def add():
                     img = "https://img.freepik.com/free-vector/flat-comic-style-background_23-2148882944.jpg?w=1380&t=st=1693394293~exp=1693394893~hmac=3dcc1ace1c32ce8b99a53c456a35a0160017b9893d8c078e34d29bc3d5d1d1bf"
                 else:
                     img = f"https://image.tana.moe/unsafe/320x0/filters:quality(90)/{data['collectionId']}/{data['id']}/{data['baseCover'][0]}"
-                result = db.session.execute(db.Select(Comic).where(Comic.name == name)).scalars().all()
+                result = Comic.query.filter(Comic.name == name).first()
                 if result:
-                    pass
+                    if data["baseCover"] != []:
+                        result.img_cover = f"https://image.tana.moe/unsafe/320x0/filters:quality(90)/{data['collectionId']}/{data['id']}/{data['baseCover'][0]}"
+                    else:
+                        continue
                 else:
                     new_comic = Comic(
                         name=name,
@@ -186,42 +257,7 @@ def update():
     form = AddForm()
     if form.validate_on_submit():
         data_test = take_data(form.date_start.data, form.date_end.data)
-        for data in data_test['items']:
-            with app.app_context():
-                name = data["name"].split(" - ")[0]
-                try:
-                    volume = data["name"].split(" - ")[-1]
-                except IndexError:
-                    volume = "Tập 1"
-                if data["digital"]:
-                    edition = "Digital"
-                elif data['edition'] == "":
-                    edition = "Normal"
-                else:
-                    edition = data["edition"]
-                if data['baseCover'] == []:
-                    img = "https://img.freepik.com/free-vector/flat-comic-style-background_23-2148882944.jpg?w=1380&t=st=1693394293~exp=1693394893~hmac=3dcc1ace1c32ce8b99a53c456a35a0160017b9893d8c078e34d29bc3d5d1d1bf"
-                else:
-                    img = f"https://image.tana.moe/unsafe/320x0/filters:quality(90)/{data['collectionId']}/{data['id']}/{data['baseCover'][0]}"
-                datetime_obj = datetime.strptime(data['publishDate'], "%Y-%m-%d %H:%M:%S.%fZ")
-                query = Comic.query.filter(Comic.name.like(name)).first()
-                result = Schedule.query.filter(
-                    Schedule.name == name, Schedule.release_date == datetime_obj.date(), Schedule.edition == edition, Schedule.volume == volume).all()
-                if result:
-                    pass
-                else:
-                    new_comic = Schedule(
-                        name=name,
-                        comic_id= query.id,
-                        volume= volume,
-                        edition=edition,
-                        price=data["price"],
-                        release_date=datetime_obj.date(),
-                        publisher=data["expand"]["publisher"]["name"],
-                        img=img
-                    )
-                    db.session.add(new_comic)
-                    db.session.commit()
+        update_comic_schedule(data_test)
         return redirect(url_for("home"))
     return render_template('update.html', user=current_user, form=form)
 
@@ -268,53 +304,32 @@ def inform():
 
 @app.route("/schedule", methods=["GET","POST"])
 def schedule():
-    if request.method == "POST":
-        selected_month = request.form['selected_month']
-        selected_year = request.form['selected_year']
-        selected_date = datetime.strptime(f"{selected_year}-{selected_month}", "%Y-%m")
-        strip_date = datetime.strftime(selected_date, "%Y-%m")
-        query_1 = Schedule.query.filter(func.strftime('%Y-%m', Schedule.release_date) == strip_date).all()
-        query_2 = db.session.query(Schedule.release_date).filter(
-            func.strftime('%Y-%m', Schedule.release_date) == strip_date).distinct().all()
-        dict = {}
-        for item in query_2:
-            query_3 = Schedule.query.filter(Schedule.release_date == item.release_date).all()
-            new_dict = {item.release_date: query_3}
-            dict.update(new_dict)
-        bought_or_not = {}
-        for comic in query_1:
-            result = Checking.query.filter(Checking.schedule_id == comic.id, Checking.user_id == current_user.id).all()
-            if result:
-                new_element = {comic.id: "TRUE"}
-                bought_or_not.update(new_element)
-            else:
-                new_element = {comic.id: "FALSE"}
-                bought_or_not.update(new_element)
-        return render_template("schedule.html", user=current_user, dict_1= dict, dict_2= bought_or_not)
-    query_1 = Schedule.query.filter(func.strftime('%Y-%m', Schedule.release_date) == datetime.today().strftime('%Y-%m')).all()
-    query_2 = db.session.query(Schedule.release_date).filter(func.strftime('%Y-%m', Schedule.release_date) == datetime.today().strftime('%Y-%m')).distinct().all()
-    dict = {}
-    for item in query_2:
-        query_3 = Schedule.query.filter(Schedule.release_date == item.release_date).all()
-        new_dict = {item.release_date : query_3}
-        dict.update(new_dict)
-    bought_or_not = {}
-    for comic in query_1:
-        result = Checking.query.filter(Checking.schedule_id == comic.id, Checking.user_id == current_user.id).all()
-        if result:
-            new_element = {comic.id: "TRUE"}
-            bought_or_not.update(new_element)
+    if current_user.is_authenticated:
+        if request.method == "POST":
+            query = selected_month_shedule()
+            schedule = month_schedule(query)
+            list_check = bought_or_not(schedule)
+            return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= list_check)
+        query = db.session.query(Schedule.release_date).filter(func.strftime('%Y-%m', Schedule.release_date) == datetime.today().strftime('%Y-%m')).distinct().all()
+        schedule = month_schedule(query)
+        list_check = bought_or_not(schedule)
+        return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= list_check)
+    else:
+        if request.method == "POST":
+            query = selected_month_shedule()
+            schedule = month_schedule(query)
+            return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= {})
         else:
-            new_element = {comic.id: "FALSE"}
-            bought_or_not.update(new_element)
-    return render_template("schedule.html", user=current_user, dict_1= dict, dict_2= bought_or_not)
+            query = db.session.query(Schedule.release_date).filter(
+                func.strftime('%Y-%m', Schedule.release_date) == datetime.today().strftime('%Y-%m')).distinct().all()
+            schedule = month_schedule(query)
+            return render_template("schedule.html", user=current_user, dict_1=schedule, dict_2={})
 
 
 @app.route("/check", methods=["POST"])
 def check():
     data = request.get_json()
     comic_id = data.get("comicId")
-    print(data.get("Check"))
     if data.get("Check"):
         with app.app_context():
             query = Schedule.query.filter(Schedule.id == comic_id).first()
@@ -336,15 +351,41 @@ def check():
     return jsonify(response)
 
 
-@app.route("/finance")
+@app.route("/finance", methods=["GET", "POST"])
 def finance():
-    result = db.session.query(
-        func.strftime('%Y-%m', Schedule.release_date).label('month'),
-        func.sum(Checking.price).label('total_amount')
-    ).join(Checking).filter(
-        Checking.user_id == current_user.id,
-        Checking.bought == True
-    ).group_by('month').order_by('month').all()
-    month = [item[0] for item in result]
-    amount = [item[1] for item in result]
-    return render_template('finance.html', user=current_user, month=month, amount=amount)
+    if current_user.is_authenticated:
+        result = db.session.query(
+            func.strftime('%Y-%m', Schedule.release_date).label('month'),
+            func.sum(Checking.price).label('total_amount')
+        ).join(Checking).filter(
+            Checking.user_id == current_user.id,
+            Checking.bought == True
+        ).group_by('month').order_by('month').all()
+        if request.method == "POST":
+            new_month = []
+            for item in result:
+                if item[0].strip("-")[0:4] == request.form["selected_year"]:
+                    new_month.append(item)
+            month = [item[0] for item in new_month]
+            amount = [item[1] for item in new_month]
+            selected_year = request.form["selected_year"]
+            year_amount = sum(amount)
+            formatted_year_amount = f"{year_amount:,}"
+        else:
+            new_month = []
+            for item in result:
+                if item[0].strip("-")[0:4] == datetime.strftime(datetime.today(),'%Y'):
+                    new_month.append(item)
+            month = [item[0] for item in new_month]
+            amount = [item[1] for item in new_month]
+            year_amount = sum(amount)
+            formatted_year_amount = f"{year_amount:,}"
+            selected_year = datetime.strftime(datetime.today(),'%Y')
+        total_amount = sum([item[1] for item in result])
+        formatted_total_amount = f"{total_amount:,}"
+        return render_template('finance.html',
+                               user=current_user, month=month, amount=amount,
+                               total_amount=formatted_total_amount, year_amount=formatted_year_amount,
+                               selected_year=selected_year)
+    else:
+        return render_template('intro.html', user=current_user)

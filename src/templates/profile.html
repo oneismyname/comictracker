@@ -1,21 +1,16 @@
 {% include 'header.html' %}
 <div class="container">
-  <h2>Striped Rows</h2>
-  <p>The .table-striped class adds zebra-stripes to a table:</p>
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Name</th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for comic in list %}
-      <tr>
-        <td>{{ comic.id }}</td>
-        <td>{{ comic.name }}</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  <h2>Followed Comic</h2>
+    <div class="row">
+          {% for comic in list %}
+        <div class="col-2 my-1">
+          <div class="card">
+            <img class="card-img-top" src="{{ comic.img_cover }}" alt="Card image cap">
+          </div>
+          <div class="text-container">
+            <p class="card-text"><strong><em><span style="font-size: larger;">{{ comic.name }}</span></em></strong></p>
+          </div>
+        </div>
+          {% endfor %}
+    </div>
 </div>

@@ -1,9 +1,17 @@
 {% include 'header.html' %}
+<script>
+$(document).ready(function() {
+    const currentDate = new Date();
+    const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+    const currentYear = currentDate.getFullYear().toString();
 
+    document.getElementById('month-select').value = currentMonth;
+    document.getElementById('year-select').value = currentYear;
+});
+</script>
 <div class="container">
-
-  <h2>Schedule</h2>
-  <form action="/schedule" method="post">
+  <h2 class="mx-2">Schedule</h2>
+  <form action="/schedule" method="post" class="mx-2">
     <label for="month-select">Chọn tháng:</label>
     <select name="selected_month" id="month-select">
       <option value="01">Tháng 01</option>
@@ -34,17 +42,20 @@
 
   <div class="container my-5 ">
         {% for key, values in dict_1.items() %}
-    <div class="row text my-2">{{ key }}</div>
+
     <div class="row cards">
+      <div class="row text my-1 mx-2">
+        <h3>{{ key }}</h3>
+      </div>
       {% for comic in values %}
-        <div class="col-2 my-2">
+        <div class="col-2 my-1">
           <div class="card">
             <img class="card-img-top" src="{{ comic.img }}" alt="Card image cap">
           </div>
           <div class="text-container">
-            <p class="card-text">{{ comic.name }}</p>
+            <p class="card-text"><strong><em><span style="font-size: larger;">{{ comic.name }}</span></em></strong></p>
             <p class="card-text">{{ comic.volume }}</p>
-            <p class="card-text">{{ comic.price }}</p>
+            <p class="card-text"><strong>{{ comic.price }} Đ</strong></p>
             <div class="wrap">
               <div>
                 <button class="subscribeButton btn btn-info" data-comic-id="{{ comic.id }}" data-check="{% if dict_2[comic.id] == 'TRUE' %}true{% else %}false{% endif %}">

@@ -1,0 +1,42 @@
+{% include 'header.html' %}
+<style>
+  body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+  }
+  .header {
+    text-align: center;
+    padding: 2rem;
+  }
+  .content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+  }
+  .image {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Welcome to Comic Finance Tracker</h1>
+    <p>Track your comic book expenses over the years!</p>
+    <p>Ready to get started? <a href="{{ url_for('login') }}">Log in</a> to start tracking your comic expenses and enjoy the experience!</p>
+  </div>
+  <div class="content">
+    <div class="image">
+      <img src="{{ url_for('static', filename='./img/tracker.png') }}" alt="Comic Finance Tracker" width="300">
+    </div>
+    <p>Are you a comic enthusiast who wants to keep a record of the money spent on comic books over the years? Our Comic Finance Tracker is here to help!</p>
+    <p>With our user-friendly interface, you can easily input your comic book purchases and expenses, and our tracker will generate insights about your spending habits. Whether you're into superhero adventures, graphic novels, or manga, our tracker will keep you organized.</p>
+    <p>Stay on top of your comic book budget and see how much you've spent on your favorite stories. Start tracking your comic expenses today and gain control over your finances!</p>
+  </div>
+</body>
+</html>
