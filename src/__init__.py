@@ -1,10 +1,12 @@
-from flask import Flask
+from flask import Flask, session
 from flask_bootstrap import Bootstrap5
 from flask_login import LoginManager
+from datetime import timedelta
 
 import src.local_func
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "thisismysecretkey"
+app.permanent_session_lifetime = timedelta(minutes=5)
 Bootstrap5(app)
 
 login_manager = LoginManager()

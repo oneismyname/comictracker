@@ -1,22 +1,23 @@
 {% from "bootstrap5/form.html" import render_form  %} {{ bootstrap.load_css() }}
 {% include 'header.html' %}
 
-<div class="container px-4 py-5" id="featured-3">
-    {% with msg= get_flashed_messages() %}
-    {% if msg %}
-    <p style="color: red;">{{ msg[0] }}</p>
-    {% endif %}
-    {% endwith %}
-    <form method="POST" action="{{ url_for('tracking') }}">
-        {{ form.hidden_tag() }}
+<div class="container px-4 py-5">
+    <div class="row">
+        <div class="col-md-6">
+            <form method="POST" action="{{ url_for('tracking') }}">
+            {{ form.hidden_tag() }}
 
-        <div class="mb-3">
-            <input type="text" class="form-control" id="autocomplete-input1" name="name" list="list-comic"
-                   placeholder="Type to search..." value="{{ form.name.data }}">
-            <datalist id="list-comic"></datalist>
+            <div class="mb-3">
+                <input type="text" class="form-control" id="autocomplete-input1" name="name" list="list-comic"
+                       placeholder="Type to search..." value="{{ form.name.data }}">
+                <datalist id="list-comic"></datalist>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Search</button>
         </div>
 
-        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+
 
     </form>
 <div class="container my-5 ">
@@ -28,7 +29,7 @@
         <img class="card-img-top" src="{{ comic.img_cover }}" alt="Card image cap">
       </div>
       <div class="text-container">
-        <p class="card-text">{{ comic.name }}</p>
+        <p class="card-text" >{{ comic.name }}</p>
         <div class="wrap">
           <div>
             <button class="followButton btn btn-info" data-comic-id="{{ comic.id }}" data-follow="{% if dict[comic.id] == 'TRUE' %}true{% else %}false{% endif %}">

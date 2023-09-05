@@ -1,11 +1,11 @@
 from datetime import datetime
 import requests
-from flask import render_template, flash, redirect, url_for, request, jsonify
+from flask import render_template, flash, redirect, url_for, request, jsonify, session
 from flask_login import current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import smtplib
 import os
-from sqlalchemy import func, text
+from sqlalchemy import func
 
 from src import app, login_manager
 from .database import User, db, Comic, Mapping, Schedule, Checking
@@ -18,13 +18,7 @@ password = os.environ.get("password")
 
 def take_data(start_day, end_day):
     headers = {
-        'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
-        'Content-Type': 'application/json',
-        'Referer': 'https://tana.moe/',
-        'Accept-Language': 'en-US',
-        'sec-ch-ua-mobile': '?0',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-        'sec-ch-ua-platform': '"Windows"',
+        'Content-Type': 'application/json'
     }
 
     params = {
@@ -67,6 +61,7 @@ def update_comic_schedule(data_test):
             if result:
                 if data['baseCover'] != []:
                     result.img = f"https://image.tana.moe/unsafe/320x0/filters:quality(90)/{data['collectionId']}/{data['id']}/{data['baseCover'][0]}"
+                    db.session.commit()
                 else:
                     continue
             else:
@@ -113,7 +108,7 @@ def selected_month_shedule():
     selected_date = datetime.strptime(f"{selected_year}-{selected_month}", "%Y-%m")
     strip_date = datetime.strftime(selected_date, "%Y-%m")
     query = db.session.query(Schedule.release_date).filter(
-        func.strftime('%Y-%m', Schedule.release_date) == strip_date).distinct().all()
+        func.strftime('%Y-%m', Schedule.release_date) == strip_date).distinct().order_by(Schedule.release_date).all()
     return query
 
 @login_manager.user_loader
@@ -132,7 +127,7 @@ def register():
     if form.validate_on_submit():
         result = db.session.execute(db.select(User).where(User.email == form.email.data)).scalar()
         if result:
-            flash("Your email is registered")
+            flash("Your email is registered", 'danger')
         else:
             if form.password.data == form.confirm_password.data:
                 secure_password = generate_password_hash(form.password.data, method="pbkdf2:sha256", salt_length=8)
@@ -146,7 +141,7 @@ def register():
                     db.session.commit()
                     return redirect(url_for('login'))
             else:
-                flash("Your password is not match")
+                flash("Your password is not match", 'danger')
     return render_template("register.html", form=form, user=current_user)
 
 
@@ -157,12 +152,14 @@ def login():
         result = db.session.execute(db.select(User).where(User.email == form.email.data)).scalar()
         if result:
             if check_password_hash(result.password, form.password.data):
+                if form.remember.data:
+                    session.permanent = True
                 login_user(result)
                 return redirect(url_for('home'))
             else:
-                flash("Your password is not correct")
+                flash("Your password is not correct", 'danger')
         else:
-            flash("Your email is not correct")
+            flash("Your email is not correct", 'danger')
     return render_template('login.html', form=form, user=current_user)
 
 
@@ -208,18 +205,21 @@ def tracking():
             with app.app_context():
                 search = form.name.data
                 result = db.session.query(Comic).where(Comic.name.ilike(f'%{search}%')).all()
-                follow_or_not = {}
-                for comic in result:
-                    query = Mapping.query.filter(Mapping.comic_id == comic.id, Mapping.user_id == current_user.id).all()
-                    if query:
-                        new_element = {comic.id: "TRUE"}
-                        follow_or_not.update(new_element)
-                    else:
-                        new_element = {comic.id: "FALSE"}
-                        follow_or_not.update(new_element)
-                return render_template('tracking.html', form=form, user=current_user, comics=result, dict = follow_or_not)
+                if result:
+                    follow_or_not = {}
+                    for comic in result:
+                        query = Mapping.query.filter(Mapping.comic_id == comic.id, Mapping.user_id == current_user.id).all()
+                        if query:
+                            new_element = {comic.id: "TRUE"}
+                            follow_or_not.update(new_element)
+                        else:
+                            new_element = {comic.id: "FALSE"}
+                            follow_or_not.update(new_element)
+                    return render_template('tracking.html', form=form, user=current_user, comics=result, dict = follow_or_not)
+                else:
+                    flash("The comic you are looking for does not exist.", 'info')
         else:
-            flash("You have to login to add")
+            flash("You have to login to add", 'danger')
     return render_template("tracking.html", form=form, user=current_user)
 
 
@@ -288,7 +288,7 @@ def inform():
             para = f"{key} - volume {values[1].split(' ')[-1]} is released today {datetime.today().date()}. Price: {values[0]}\n"
             msg += para
         if msg == "":
-            flash("No comic release today")
+            flash("No comic that you followed release today", 'info')
             return redirect(url_for('home'))
         else:
             with smtplib.SMTP("smtp.gmail.com") as connection:
@@ -310,7 +310,7 @@ def schedule():
             schedule = month_schedule(query)
             list_check = bought_or_not(schedule)
             return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= list_check)
-        query = db.session.query(Schedule.release_date).filter(func.strftime('%Y-%m', Schedule.release_date) == datetime.today().strftime('%Y-%m')).distinct().all()
+        query = db.session.query(Schedule.release_date).filter(func.strftime('%Y-%m', Schedule.release_date) == datetime.today().strftime('%Y-%m')).distinct().order_by(Schedule.release_date).all()
         schedule = month_schedule(query)
         list_check = bought_or_not(schedule)
         return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= list_check)
@@ -321,7 +321,7 @@ def schedule():
             return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= {})
         else:
             query = db.session.query(Schedule.release_date).filter(
-                func.strftime('%Y-%m', Schedule.release_date) == datetime.today().strftime('%Y-%m')).distinct().all()
+                func.strftime('%Y-%m', Schedule.release_date) == datetime.today().strftime('%Y-%m')).distinct().order_by(Schedule.release_date).all()
             schedule = month_schedule(query)
             return render_template("schedule.html", user=current_user, dict_1=schedule, dict_2={})
 

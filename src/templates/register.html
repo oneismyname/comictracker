@@ -1,15 +1,57 @@
 {% from "bootstrap5/form.html" import render_form %}{{ bootstrap.load_css() }}
 {% include "header.html" %}
 
-<div class="container px-4 py-5" id="featured-3">
+<div class="container my-5">
     <div class="row">
-        {% with msg = get_flashed_messages() %}
-        {% if msg %}
-        <p class="text-danger">{{ msg[0] }}</p>
-        {% endif %}
-        {% endwith %}
+        <div class="col-md-6 mx-auto">
+            <form method="post" action="">
+                {{ form.hidden_tag() }}
+                <fieldset class="form-group">
+                    <legend class="border-bottom mb-4">Join Us</legend>
+                    <div class="form-group">
+                        {{ form.name.label(class="form-control-label") }}
+                        {% if form.name.errors %}
+                            {{ form.name(class="form-control form-control-lg is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.name.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.name(class="form-control form-control-lg my-2") }}
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        {{ form.email.label(class="form-control-label") }}
+                        {% if form.email.errors %}
+                            {{ form.email(class="form-control form-control-lg is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.email.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.email(class="form-control form-control-lg my-2") }}
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        {{ form.password.label(class="form-control-label") }}
+                        {{ form.password(class="form-control form-control-lg my-2") }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.confirm_password.label(class="form-control-label") }}
+                        {{ form.confirm_password(class="form-control form-control-lg my-2") }}
+                    </div>
+                </fieldset>
+                <div class="form-group my-3">
+                    {{ form.submit(class="btn btn-outline-info") }}
+                </div>
+            </form>
+            <div class="border-top pt-3">
+                <small class="text-muted">
+                    Already Have An Account? <a class="ml-2" href="{{ url_for('login') }}">Login</a>
+                </small>
+            </div>
+        </div>
     </div>
-<div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
-{{ render_form(form, novalidate=True) }}
-</div>
 </div>
