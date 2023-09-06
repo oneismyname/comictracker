@@ -26,3 +26,11 @@ class AddForm(FlaskForm):
 class SearchForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired()])
     submit = SubmitField("Search")
+
+
+class ForgotForm(FlaskForm):
+    name = StringField("Name", validators=[DataRequired()])
+    email = StringField("Email", validators=[DataRequired(), Email()])
+    new_password = PasswordField("New Password", validators=[DataRequired()])
+    confirm_password = PasswordField("Confirm Password", validators=[DataRequired()])
+    submit = SubmitField("Confirm")

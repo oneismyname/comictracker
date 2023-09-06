@@ -1,4 +1,8 @@
-
+.container.my-5 {
+    background-color: #F1F0E8; /* Màu nền của container */
+    padding: 30px;
+    border-radius: 10px; /* Đường viền bo tròn cho container */
+  }
 
   .row.text {
     margin-top: 1rem;
@@ -50,12 +54,6 @@
     font-size: 14px;
   }
 
-  .subscribeButton {
-    font-size: 12px;
-    position: absolute;
-    top: 0.5rem;
-    left: 1rem; /* Đặt vị trí nút button ở bên trái */
-  }
 
   .edition {
     font-size: 12px;
@@ -68,9 +66,8 @@
     background-color: rgba(255, 0, 0);
   }
 
-    .followButton {
-    font-size: 12px;
-    position: absolute;
-    top: 0.5rem;
-    left: 1rem; /* Đặt vị trí nút button ở bên trái */
+  .subscribeButton {
+    width: 80px;
+    padding: 5px 10px;
+  }
   }

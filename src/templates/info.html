@@ -1,0 +1,79 @@
+{% include 'header.html' %}
+<style>
+  .subscribeButton {
+    width: 100px;
+    padding: 5px 10px;
+  }
+  .container.my-2 {
+    background-color: #F1F0E8; /* Màu nền của container */
+    padding: 10px;
+    border-radius: 10px; /* Đường viền bo tròn cho container */
+  }
+    .table td {
+    vertical-align: middle; /* Căn giữa theo chiều dọc */
+  }
+</style>
+<div class="container my-2 ">
+    <div class="row my-2">
+        <div class="col-2">
+            <div class="card">
+                <img class="card-img-top" src="{{ comic[0].img }}">
+            </div>
+        </div>
+        <div class="col-8 mx-2 my-5 ">
+            <h2 class="text-secondary">{{ comic[0].name }}</h2>
+            <p class="text-muted"><strong>Nhà xuất bản/phát hành:</strong> {{ comic[0].publisher }}</p>
+            <p class="text-muted"><strong>Ngày đầu tiên phát hành:</strong> {{ comic[0].release_date }}</p>
+            <p class="text-info">{{ para }}</p>
+            <button class="followButton btn btn-info" data-comic-id="{{ comic[0].comic_id }}" data-follow="{% if follow_check[comic[0].comic_id] == 'TRUE' %}true{% else %}false{% endif %}">
+              {% if follow_check[comic[0].comic_id] == 'TRUE' %}
+                UnFollow
+              {% else %}
+                Follow
+              {% endif %}
+            </button>
+        </div>
+    </div>
+</div>
+<div class="container border-top border-4">
+    <table class="table table-striped table-dark my-2">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Edition</th>
+          <th scope="col">Volume</th>
+          <th scope="col">Release Date</th>
+          <th scope="col">Price</th>
+          <th scope="col">Purchased?</th>
+          <th scope="col">Buy</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for comic in comic %}
+        <tr {% if comic.edition != "Normal" %}class="table-warning"{% endif %}>
+          <td>{{ comic.name }}</td>
+          <td>{{ comic.edition }}</td>
+          <td>
+              {% if comic.volume == comic.name %}
+                Tập 1
+              {% else %}
+                {{ comic.volume }}
+              {% endif %}
+          </td>
+          <td>{{ comic.release_date }}</td>
+          <td>{{ comic.price }} Đ</td>
+          <td>
+            <button class="subscribeButton btn btn-outline-info" data-comic-id="{{ comic.id }}" data-check="{% if dict[comic.id] == 'TRUE' %}true{% else %}false{% endif %}">
+              {% if dict[comic.id] == 'TRUE' %}
+                UnCheck
+              {% else %}
+                Check
+              {% endif %}
+            </button>
+          </td>
+          <td>Buy</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+</div>

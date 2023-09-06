@@ -1,4 +1,5 @@
 {% include 'header.html' %}
+
 <body>
 <div class="container">
     <div>
@@ -6,22 +7,20 @@
     </div>
     <div class="row">
         <div class="col-8">
-          <canvas id="myChart" style="max-width: 600px;"></canvas>
+          <canvas id="myChart" style="max-width: 1000px;"></canvas>
         </div>
         <div class="col-4">
-            <form action="/finance" method="post">
-                <label for="year-select">Chọn năm:</label>
-                <select name="selected_year" id="year-select">
-                  <option value="2020">2020</option>
-                  <option value="2021">2021</option>
-                  <option value="2022">2022</option>
-                  <option value="2023">2023</option>
-                  <option value="2024">2024</option>
-                </select>
-                <input type="submit" value="Select">
+            <form action="/finance" method="post" class="form-inline">
+                <div class="form-group mb-2">
+                    <label for="year-select" class="form-label">Select year:</label>
+                    <select name="selected_year" id="year-select" class="form-control">
+                        <option value=""></option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">Select</button>
             </form>
-            <p>Total amout is {{ total_amount }} Đ</p>
-            <p>Total amout is {{ year_amount }} Đ in {{ selected_year }}</p>
+            <p class="mb-0 text-danger">Total amount is <span class="font-weight-bold">{{ total_amount }} Đ</span></p>
+            <p class="text-primary">Total amount is <span class="font-weight-bold">{{ year_amount }} Đ</span> in {{ selected_year }}</p>
         </div>
     </div>
 
@@ -47,6 +46,16 @@ new Chart("myChart", {
     }
   }
 });
+
+    var yearSelect = document.getElementById("year-select");
+    var currentYear = new Date().getFullYear(); // Lấy năm hiện tại
+    for (var year = 2020; year <= currentYear; year++) {
+        var option = document.createElement("option");
+        option.value = year;
+        option.text = year;
+        yearSelect.appendChild(option);
+    }
+    yearSelect.value = currentYear.toString();
 </script>
 </div>
 </body>

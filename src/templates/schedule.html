@@ -1,4 +1,90 @@
 {% include 'header.html' %}
+<style>
+      .subscribeButton {
+    font-size: 12px;
+    position: absolute;
+    top: 0.5rem;
+    left: 1rem; /* Đặt vị trí nút button ở bên trái */
+  }
+</style>
+<div class="container my-5">
+  <h2 class="mx-2">Schedule</h2>
+  <form action="/schedule" method="post" class="mx-2">
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <label for="month-select" class="mx-4">Select month:</label>
+            <select name="selected_month" id="month-select" class="form-control my-2 mx-4">
+                <option value="01">Tháng 01</option>
+                <option value="02">Tháng 02</option>
+                <option value="03">Tháng 03</option>
+                <option value="04">Tháng 04</option>
+                <option value="05">Tháng 05</option>
+                <option value="06">Tháng 06</option>
+                <option value="07">Tháng 07</option>
+                <option value="08">Tháng 08</option>
+                <option value="09">Tháng 09</option>
+                <option value="10">Tháng 10</option>
+                <option value="11">Tháng 11</option>
+                <option value="12">Tháng 12</option>
+            </select>
+        </div>
+        <div class="form-group col-md-6">
+            <label for="year-select" class="mx-4">Select year:</label>
+            <select name="selected_year" id="year-select" class="form-control my-2 mx-4">
+                <option value="2020">2020</option>
+                <option value="2021">2021</option>
+                <option value="2022">2022</option>
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+            </select>
+        </div>
+    </div>
+    <div class="text-center form-group col-md-1">
+        <button type="submit" class="btn btn-primary">Select</button>
+    </div>
+  </form>
+
+  <div class="container my-5 ">
+      {% for key, values in dict_1.items() %}
+        <div class="row cards">
+            <div class="row text my-2 border-top">
+                <h3 class="text-primary">{{ key }}</h3>
+            </div>
+            {% for comic in values %}
+            <div class="col-2 my-1">
+              <div class="card">
+                <img class="card-img-top" src="{{ comic.img }}" alt="Card image cap">
+              </div>
+              <div class="text-container">
+                <a href="{{ url_for('info', index=comic.comic_id) }}"><p class="card-text"><strong><em><span style="font-size: larger;">{{ comic.name }}</span></em></strong></p></a>
+                <p class="card-text text-muted">
+                    {% if comic.volume == comic.name %}
+                        Tập 1
+                    {% else %}
+                        {{ comic.volume }}
+                    {% endif %}
+                </p>
+                <p class="card-text text-muted"><strong>{{ comic.price }} Đ</strong></p>
+                <div class="wrap">
+                  <div>
+                    <button class="subscribeButton btn btn-info" data-comic-id="{{ comic.id }}" data-check="{% if dict_2[comic.id] == 'TRUE' %}true{% else %}false{% endif %}">
+                      {% if dict_2[comic.id] == 'TRUE' %}
+                        UnCheck
+                      {% else %}
+                        Check
+                      {% endif %}
+                    </button>
+                    <p class="card-text edition">{{ comic.edition }}</p>
+                  </div>
+                </div>
+                <div id="resultMessage"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+  {% endfor %}
+  </div>
+</div>
 <script>
 $(document).ready(function() {
     const currentDate = new Date();
@@ -8,71 +94,19 @@ $(document).ready(function() {
     document.getElementById('month-select').value = currentMonth;
     document.getElementById('year-select').value = currentYear;
 });
+ var monthSelect = document.getElementById("month-select");
+    var yearSelect = document.getElementById("year-select");
+
+
+    var selectedMonth = localStorage.getItem("selectedMonth");
+    var selectedYear = localStorage.getItem("selectedYear");
+
+
+    monthSelect.addEventListener("change", function () {
+        localStorage.setItem("selectedMonth", this.value);
+    });
+
+    yearSelect.addEventListener("change", function () {
+        localStorage.setItem("selectedYear", this.value);
+    });
 </script>
-<div class="container">
-  <h2 class="mx-2">Schedule</h2>
-  <form action="/schedule" method="post" class="mx-2">
-    <label for="month-select">Chọn tháng:</label>
-    <select name="selected_month" id="month-select">
-      <option value="01">Tháng 01</option>
-      <option value="02">Tháng 02</option>
-      <option value="03">Tháng 03</option>
-      <option value="04">Tháng 04</option>
-      <option value="05">Tháng 05</option>
-      <option value="06">Tháng 06</option>
-      <option value="07">Tháng 07</option>
-      <option value="08">Tháng 08</option>
-      <option value="09">Tháng 09</option>
-      <option value="10">Tháng 10</option>
-      <option value="11">Tháng 11</option>
-      <option value="12">Tháng 12</option>
-    </select>
-
-    <label for="year-select">Chọn năm:</label>
-    <select name="selected_year" id="year-select">
-      <option value="2020">2020</option>
-      <option value="2021">2021</option>
-      <option value="2022">2022</option>
-      <option value="2023">2023</option>
-      <option value="2024">2024</option>
-    </select>
-
-    <input type="submit" value="Select">
-  </form>
-
-  <div class="container my-5 ">
-        {% for key, values in dict_1.items() %}
-
-    <div class="row cards">
-      <div class="row text my-1 mx-2">
-        <h3>{{ key }}</h3>
-      </div>
-      {% for comic in values %}
-        <div class="col-2 my-1">
-          <div class="card">
-            <img class="card-img-top" src="{{ comic.img }}" alt="Card image cap">
-          </div>
-          <div class="text-container">
-            <p class="card-text"><strong><em><span style="font-size: larger;">{{ comic.name }}</span></em></strong></p>
-            <p class="card-text">{{ comic.volume }}</p>
-            <p class="card-text"><strong>{{ comic.price }} Đ</strong></p>
-            <div class="wrap">
-              <div>
-                <button class="subscribeButton btn btn-info" data-comic-id="{{ comic.id }}" data-check="{% if dict_2[comic.id] == 'TRUE' %}true{% else %}false{% endif %}">
-                  {% if dict_2[comic.id] == 'TRUE' %}
-                    UnCheck
-                  {% else %}
-                    Check
-                  {% endif %}
-                </button>
-                <p class="card-text edition">{{ comic.edition }}</p>
-              </div>
-            </div>
-            <div id="resultMessage"></div>
-          </div>
-        </div>
-      {% endfor %}
-    </div>
-  {% endfor %}
-  </div>
-</div>

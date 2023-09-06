@@ -1,9 +1,16 @@
 {% from "bootstrap5/form.html" import render_form  %} {{ bootstrap.load_css() }}
 {% include 'header.html' %}
-
-<div class="container px-4 py-5">
+<style>
+    .followButton {
+    font-size: 12px;
+    position: absolute;
+    top: 0.5rem;
+    left: 1rem;
+  }
+</style>
+<div class="container py-5">
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-8">
             <form method="POST" action="{{ url_for('tracking') }}">
             {{ form.hidden_tag() }}
 
@@ -14,13 +21,14 @@
             </div>
 
             <button type="submit" class="btn btn-primary">Search</button>
+            </form>
         </div>
-
+        <div class="col-md-4">
+            <p class="border-left text-danger">{{ para }}</p>
+        </div>
     </div>
-
-
-    </form>
-<div class="container my-5 ">
+{% if search == "true" %}
+<div class="container my-4">
     {% if comics %}
     <div class="row cards">
     {% for comic in comics %}
@@ -29,7 +37,7 @@
         <img class="card-img-top" src="{{ comic.img_cover }}" alt="Card image cap">
       </div>
       <div class="text-container">
-        <p class="card-text" >{{ comic.name }}</p>
+          <a href="{{ url_for('info', index=comic.id) }}"><p class="card-text"><strong><em><span style="font-size: larger;">{{ comic.name }}</span></em></strong></p></a>
         <div class="wrap">
           <div>
             <button class="followButton btn btn-info" data-comic-id="{{ comic.id }}" data-follow="{% if dict[comic.id] == 'TRUE' %}true{% else %}false{% endif %}">
@@ -46,5 +54,55 @@
     </div>
   {% endfor %}
 {% endif %}
+{% else %}
 </div>
+    <div class="container">
+        {% for page_num in comic.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% if page_num %}
+                {% if comic.page == page_num %}
+                    <a class="btn btn-info mb-4" href="{{ url_for('tracking', page=page_num) }}">{{ page_num }}</a>
+                {% else %}
+                    <a class="btn btn-outline-info mb-4" href="{{ url_for('tracking', page=page_num) }}">{{ page_num }}</a>
+                {% endif %}
+            {% else %}
+                ...
+            {% endif %}
+        {% endfor %}
+        <div class="row">
+          {% for comic in comic.items %}
+            <div class="col-2 my-1">
+              <div class="card">
+                <img class="card-img-top" src="{{ comic.img_cover }}" alt="Card image cap">
+              </div>
+              <div class="text-container">
+                <a href="{{ url_for('info', index=comic.id) }}"><p class="card-text"><strong><em><span style="font-size: larger;">{{ comic.name }}</span></em></strong></p></a>
+                  <div class="wrap">
+                  <div>
+                    <button class="followButton btn btn-info" data-comic-id="{{ comic.id }}" data-follow="{% if dict[comic.id] == 'TRUE' %}true{% else %}false{% endif %}">
+                      {% if dict[comic.id] == 'TRUE' %}
+                        UnFollow
+                      {% else %}
+                        Follow
+                      {% endif %}
+                    </button>
+                  </div>
+                </div>
+                <div id="resultMessage_1"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        {% for page_num in comic.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% if page_num %}
+                {% if comic.page == page_num %}
+                    <a class="btn btn-info mb-4" href="{{ url_for('tracking', page=page_num) }}">{{ page_num }}</a>
+                {% else %}
+                    <a class="btn btn-outline-info mb-4" href="{{ url_for('tracking', page=page_num) }}">{{ page_num }}</a>
+                {% endif %}
+            {% else %}
+                ...
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
 </div>

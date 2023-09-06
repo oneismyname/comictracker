@@ -9,7 +9,7 @@ from sqlalchemy import func
 
 from src import app, login_manager
 from .database import User, db, Comic, Mapping, Schedule, Checking
-from .forms import RegisterForm, LoginForm, AddForm, SearchForm
+from .forms import RegisterForm, LoginForm, AddForm, SearchForm, ForgotForm
 
 
 my_email = os.environ.get("email")
@@ -202,6 +202,7 @@ def tracking():
     form = SearchForm()
     if form.validate_on_submit():
         if current_user.is_authenticated:
+            para = "Follow your favorite comics and receive notifications on release date"
             with app.app_context():
                 search = form.name.data
                 result = db.session.query(Comic).where(Comic.name.ilike(f'%{search}%')).all()
@@ -215,12 +216,28 @@ def tracking():
                         else:
                             new_element = {comic.id: "FALSE"}
                             follow_or_not.update(new_element)
-                    return render_template('tracking.html', form=form, user=current_user, comics=result, dict = follow_or_not)
+                    return render_template('tracking.html', form=form, user=current_user, comics=result, dict = follow_or_not, search="true", para=para)
                 else:
                     flash("The comic you are looking for does not exist.", 'info')
         else:
             flash("You have to login to add", 'danger')
-    return render_template("tracking.html", form=form, user=current_user)
+    page = request.args.get('page', 1, type=int)
+    result = Comic.query.order_by(Comic.name).paginate(page=page ,per_page=30)
+    if current_user.is_authenticated:
+        follow_or_not = {}
+        para = "Follow your favorite comics and receive notifications on release date"
+        for comic in result.items:
+            query = Mapping.query.filter(Mapping.comic_id == comic.id, Mapping.user_id == current_user.id).all()
+            if query:
+                new_element = {comic.id: "TRUE"}
+                follow_or_not.update(new_element)
+            else:
+                new_element = {comic.id: "FALSE"}
+                follow_or_not.update(new_element)
+        return render_template("tracking.html", form=form, user=current_user, comic=result, search="false",
+                               dict=follow_or_not, para=para)
+    para = "Log in to follow your favorite comic books"
+    return render_template("tracking.html", form=form, user=current_user, comic=result, search="false", para=para)
 
 
 @app.route("/follow", methods=["POST"])
@@ -389,3 +406,53 @@ def finance():
                                selected_year=selected_year)
     else:
         return render_template('intro.html', user=current_user)
+
+
+@app.route("/forgot", methods=["GET", "POST"])
+def forgot_password():
+    form = ForgotForm()
+    if form.validate_on_submit():
+        with app.app_context():
+            query = User.query.filter(User.name == form.name.data, User.email == form.email.data).first()
+            if query:
+                if form.new_password.data == form.confirm_password.data:
+                    query.password = generate_password_hash(form.new_password.data, method="pbkdf2:sha256", salt_length=8)
+                    db.session.commit()
+                    flash("Successfully update your password", "success")
+                    return redirect(url_for('login'))
+                else:
+                    flash("Your password is not match", "info")
+            else:
+                flash("Your email or name is not correct", "info")
+    return render_template("forgot.html", form=form, user= current_user)
+
+
+@app.route("/info/<index>")
+def info(index):
+    if current_user.is_authenticated:
+        query = db.session.query(Schedule).filter(Schedule.comic_id == index).order_by(Schedule.release_date).all()
+        list_check = {}
+        para = "Mark the comic volume you have purchased"
+        for comic in query:
+            with app.app_context():
+                check = Checking.query.filter(Checking.schedule_id == comic.id, Checking.user_id == current_user.id).all()
+                for item in check:
+                    if item.bought == True:
+                        add = {comic.id: "TRUE"}
+                        list_check.update(add)
+                    else:
+                        add = {comic.id: "FALSE"}
+                        list_check.update(add)
+        follow = Mapping.query.filter(Mapping.comic_id == query[0].comic_id, Mapping.user_id == current_user.id).first()
+        follow_check = {}
+        if follow:
+            add = { query[0].comic_id : "TRUE" }
+            follow_check.update(add)
+        else:
+            add = {query[0].comic_id: "FALSE"}
+            follow_check.update(add)
+        return render_template('info.html', comic=query, user=current_user, dict = list_check, para=para, follow_check=follow_check)
+    else:
+        para = "Log in to mark the comic volume you have purchased"
+        query = db.session.query(Schedule).filter(Schedule.comic_id == index).order_by(Schedule.release_date).all()
+        return render_template('info.html', comic=query, user=current_user, dict={}, para=para)

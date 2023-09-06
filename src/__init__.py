@@ -6,7 +6,7 @@ from datetime import timedelta
 import src.local_func
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "thisismysecretkey"
-app.permanent_session_lifetime = timedelta(minutes=5)
+app.permanent_session_lifetime = timedelta(days=30)
 Bootstrap5(app)
 
 login_manager = LoginManager()
