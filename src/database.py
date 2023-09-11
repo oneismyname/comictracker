@@ -1,7 +1,6 @@
-from flask_sqlalchemy import SQLAlchemy
+from src import db
 from flask_login import UserMixin
 
-db = SQLAlchemy()
 
 
 class Mapping(db.Model):
@@ -13,6 +12,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(250), nullable=False)
     email = db.Column(db.String(1000), nullable=False)
+    avatar = db.Column(db.String(100), nullable=False, default='https://picsum.photos/200')
     password = db.Column(db.String(1000), nullable=False)
     following = db.relationship('Mapping', backref='user')
     check = db.relationship('Checking', backref='check')

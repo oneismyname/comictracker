@@ -1,19 +1,23 @@
 from datetime import datetime
 import requests
-from flask import render_template, flash, redirect, url_for, request, jsonify, session
-from flask_login import current_user, login_user, logout_user
+from flask import render_template, flash, redirect, url_for, request, jsonify
+from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 import smtplib
 import os
-from sqlalchemy import func
+from sqlalchemy import func, select
+from google.cloud import storage
+from PIL import Image
+import secrets
 
 from src import app, login_manager
 from .database import User, db, Comic, Mapping, Schedule, Checking
-from .forms import RegisterForm, LoginForm, AddForm, SearchForm, ForgotForm
+from .forms import RegisterForm, LoginForm, AddForm, SearchForm, ForgotForm, UpdateForm
 
 
 my_email = os.environ.get("email")
 password = os.environ.get("password")
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'comictracker-7b0ea082fc63.json'
 
 
 def take_data(start_day, end_day):
@@ -111,6 +115,31 @@ def selected_month_shedule():
         func.strftime('%Y-%m', Schedule.release_date) == strip_date).distinct().order_by(Schedule.release_date).all()
     return query
 
+
+def set_avatar(avatar):
+    random_hex = secrets.token_hex(8)
+    filename = random_hex + avatar.filename
+    uploaded_file = avatar
+    content_type = uploaded_file.content_type
+    gcs_client = storage.Client()
+    storage_bucket = gcs_client.get_bucket('comictrack_avatar')
+    try:
+        storage_bucket.blob(f'{current_user.avatar.split("/")[-1]}').delete()
+    except:
+        blob = storage_bucket.blob(filename)
+        blob.upload_from_string(uploaded_file.read(), content_type=content_type)
+        blob.make_public()
+        url = blob.public_url
+        current_user.avatar = url
+        db.session.commit()
+    else:
+        blob = storage_bucket.blob(filename)
+        blob.upload_from_string(uploaded_file.read(), content_type=content_type)
+        blob.make_public()
+        url = blob.public_url
+        current_user.avatar = url
+        db.session.commit()
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.get_or_404(User, user_id)
@@ -118,7 +147,8 @@ def load_user(user_id):
 
 @app.route("/")
 def home():
-    return render_template("index.html", user=current_user)
+    query = Schedule.query.filter(Schedule.img != "https://img.freepik.com/free-vector/flat-comic-style-background_23-2148882944.jpg?w=1380&t=st=1693394293~exp=1693394893~hmac=3dcc1ace1c32ce8b99a53c456a35a0160017b9893d8c078e34d29bc3d5d1d1bf").order_by(Schedule.release_date.desc()).limit(6)
+    return render_template("index.html", user=current_user, comics=query)
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -152,9 +182,7 @@ def login():
         result = db.session.execute(db.select(User).where(User.email == form.email.data)).scalar()
         if result:
             if check_password_hash(result.password, form.password.data):
-                if form.remember.data:
-                    session.permanent = True
-                login_user(result)
+                login_user(result, remember=form.remember.data)
                 return redirect(url_for('home'))
             else:
                 flash("Your password is not correct", 'danger')
@@ -262,11 +290,23 @@ def follow():
     return jsonify(response)
 
 
-@app.route("/profile")
+@app.route("/profile", methods=["GET", "POST"])
+@login_required
 def profile():
-    with app.app_context():
-        query = db.session.query(Comic).join(Mapping).filter(Mapping.user_id == current_user.id).all()
-        return render_template("profile.html", list = query, user=current_user)
+    form = UpdateForm(
+        name= current_user.name,
+        email= current_user.email
+    )
+    if form.validate_on_submit():
+        if form.avatar.data:
+            set_avatar(form.avatar.data)
+        current_user.name = form.name.data
+        current_user.email = form.email.data
+        db.session.commit()
+        flash("Your account has been updated", 'success')
+        return redirect(url_for('profile'))
+    query = db.session.query(Comic).join(Mapping).filter(Mapping.user_id == current_user.id).all()
+    return render_template("profile.html", list = query, user=current_user, form=form)
 
 
 @app.route("/update", methods=["GET", "POST"])
@@ -293,30 +333,29 @@ def get_suggestions():
 @app.route("/inform")
 def inform():
     with app.app_context():
-        comics = db.session.query(Comic).join(Mapping).filter(Mapping.user_id == current_user.id).all()
         dict = {}
-        for comic in comics:
-            schedule = db.session.query(Schedule).filter(Schedule.name == comic.name, Schedule.release_date == datetime.today().date()).all()
-            for item in schedule:
-                new_obj = {item.name: [item.price, item.volume]}
-                dict.update(new_obj)
-        msg = ""
-        for key, values in dict.items():
-            para = f"{key} - volume {values[1].split(' ')[-1]} is released today {datetime.today().date()}. Price: {values[0]}\n"
-            msg += para
-        if msg == "":
-            flash("No comic that you followed release today", 'info')
-            return redirect(url_for('home'))
-        else:
-            with smtplib.SMTP("smtp.gmail.com") as connection:
-                connection.starttls()
-                connection.login(user=my_email, password=password)
-                connection.sendmail(
-                    from_addr=my_email,
-                    to_addrs=current_user.email,
-                    msg=f"Subject: BUY NOW\n\n{msg}"
+        query = select(Schedule.name, Schedule.volume, Schedule.edition,Schedule.price, User.email).join(Mapping, Mapping.comic_id == Schedule.comic_id).join(User, User.id == Mapping.user_id).where(Schedule.comic_id == Mapping.comic_id, User.id == Mapping.user_id, Schedule.release_date == datetime.today().date())
+        comics_release_today = list(db.session.execute(query).all())
+        for comic in comics_release_today:
+            dict[comic.email] = []
+        for comic in comics_release_today:
+            dict[comic.email].append([comic.name, comic.edition, comic.volume, comic.price])
+        for email, comics in dict.items():
+            msg = ""
+            for comic in comics:
+                msg += f"{comic[0]} {comic[1]} edition is released today ({datetime.today().date()}). Price {comic[3]}\n"
+            if msg == "":
+                flash("No comic that you followed release today", 'info')
+            else:
+                with smtplib.SMTP("smtp.gmail.com") as connection:
+                    connection.starttls()
+                    connection.login(user=my_email, password=password)
+                    connection.sendmail(
+                        from_addr=my_email,
+                        to_addrs=email,
+                        msg=f"Subject: BUY NOW\n\n{msg}"
                 )
-            return redirect(url_for('home'))
+    return redirect(url_for('home'))
 
 
 @app.route("/schedule", methods=["GET","POST"])
@@ -430,9 +469,21 @@ def forgot_password():
 @app.route("/info/<index>")
 def info(index):
     if current_user.is_authenticated:
-        query = db.session.query(Schedule).filter(Schedule.comic_id == index).order_by(Schedule.release_date).all()
+        first_comic = db.session.query(Schedule).filter(Schedule.comic_id == index).order_by(Schedule.release_date).first()
+        select = request.args.get("select", "all", type=str)
+        if select == "all" :
+            query = db.session.query(Schedule).filter(Schedule.comic_id == index).order_by(Schedule.release_date).all()
+        elif select == "purchased":
+            query = db.session.query(Schedule).join(Checking).filter(Schedule.comic_id == index, Checking.bought == True, Checking.user_id == current_user.id).order_by(Schedule.release_date).all()
+        else:
+            query1 = db.session.query(Schedule).filter(Schedule.comic_id == index).order_by(Schedule.release_date).all()
+            query2 = db.session.query(Schedule).join(Checking).filter(Schedule.comic_id == index,
+                                                                     Checking.bought == True,
+                                                                     Checking.user_id == current_user.id).order_by(
+                Schedule.release_date).all()
+            result = list(set(query1) - set(query2))
+            query = sorted(result, key=lambda schedule: schedule.release_date)
         list_check = {}
-        para = "Mark the comic volume you have purchased"
         for comic in query:
             with app.app_context():
                 check = Checking.query.filter(Checking.schedule_id == comic.id, Checking.user_id == current_user.id).all()
@@ -443,16 +494,12 @@ def info(index):
                     else:
                         add = {comic.id: "FALSE"}
                         list_check.update(add)
-        follow = Mapping.query.filter(Mapping.comic_id == query[0].comic_id, Mapping.user_id == current_user.id).first()
-        follow_check = {}
+        follow = Mapping.query.filter(Mapping.comic_id == index, Mapping.user_id == current_user.id).first()
         if follow:
-            add = { query[0].comic_id : "TRUE" }
-            follow_check.update(add)
+            follow_check = "TRUE"
         else:
-            add = {query[0].comic_id: "FALSE"}
-            follow_check.update(add)
-        return render_template('info.html', comic=query, user=current_user, dict = list_check, para=para, follow_check=follow_check)
+            follow_check = "FALSE"
+        return render_template('info.html', comic=query, user=current_user, dict = list_check, follow_check=follow_check, index=index, first=first_comic)
     else:
-        para = "Log in to mark the comic volume you have purchased"
         query = db.session.query(Schedule).filter(Schedule.comic_id == index).order_by(Schedule.release_date).all()
-        return render_template('info.html', comic=query, user=current_user, dict={}, para=para)
+        return render_template('info.html', comic=query, user=current_user, dict={}, index=index, first=query[0])

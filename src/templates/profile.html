@@ -1,16 +1,79 @@
 {% include 'header.html' %}
-<div class="container">
-  <h2>Followed Comic</h2>
-    <div class="row">
-          {% for comic in list %}
-        <div class="col-2 my-1">
-          <div class="card">
-            <img class="card-img-top" src="{{ comic.img_cover }}" alt="Card image cap">
-          </div>
-          <div class="text-container">
-            <a href="{{ url_for('info', index=comic.id) }}"><p class="card-text"><strong><em><span style="font-size: larger;">{{ comic.name }}</span></em></strong></p></a>
-          </div>
+<style>
+    .col-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Căn giữa theo chiều dọc */
+    text-align: center; /* Căn giữa văn bản theo chiều ngang */
+}
+.col-info {
+    background-color: #FFFFDD;
+    }
+</style>
+<div class="container my-2">
+    <div class="row col-info">
+        <div class="col-8">
+            <legend class="border-bottom montserrat-text">Account Infomation</legend>
+            <form method="post" action="" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+                <fieldset class="form-group px-3">
+                    <div class="form-group">
+                        {{ form.name.label(class="form-control-label open-text") }}
+                        {% if form.name.errors %}
+                            {{ form.name(class="form-control form-control-lg is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.name.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.name(class="form-control form-control-lg my-2") }}
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        {{ form.email.label(class="form-control-label open-text") }}
+                        {% if form.email.errors %}
+                            {{ form.email(class="form-control form-control-lg is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.email.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.email(class="form-control form-control-lg my-2") }}
+                        {% endif %}
+                    </div>
+                    <small><a href="{{ url_for('forgot_password') }}">Change password</a></small>
+                    <div class="form-group">
+                        {{ form.avatar.label() }}</br>
+                        {{ form.avatar(class="form-control-field") }}</br>
+                        {% if form.avatar.errors %}
+                            {% for error in form.avatar.errors %}
+                                <span class="text-danger">{{ error }}</span></br>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </fieldset>
+                <div class="form-group my-2 px-3">
+                    {{ form.submit(class="btn btn-info") }}
+                </div>
+            </form>
         </div>
-          {% endfor %}
+        <div class="col col-profile">
+            <img class="rounded-circle" src="{{ current_user.avatar }}" width="225" height="225">
+            <h2 class="open-text">{{ current_user.name }}</h2>
+            <p class="open-text">{{ current_user.email }}</p>
+        </div>
+    </div>
+    <div class="row border-top my-2">
+        <legend class="text-info montserrat-text" style="text-decoration: underline;">Your Followed Comic</legend>
+        {% for comic in list %}
+            <div class="col-2 mb-2">
+                <div class="card">
+                    <img class="card-img-top" src="{{ comic.img_cover }}">
+                </div>
+                <a href="{{ url_for('info', index=comic.id) }}"><p class="card-text mb-2"><strong><em><span style="font-size: larger;">{{ comic.name }}</span></em></strong></p></a>
+            </div>
+        {% endfor %}
     </div>
 </div>

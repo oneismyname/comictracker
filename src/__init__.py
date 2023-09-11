@@ -2,6 +2,9 @@ from flask import Flask, session
 from flask_bootstrap import Bootstrap5
 from flask_login import LoginManager
 from datetime import timedelta
+from flask_sqlalchemy import SQLAlchemy
+
+
 
 import src.local_func
 app = Flask(__name__)
@@ -13,9 +16,9 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 
 # create table
-from src.database import db
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///webdata.db'
-db.init_app(app)
+db = SQLAlchemy(app)
 
 
 with app.app_context():

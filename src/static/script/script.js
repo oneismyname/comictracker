@@ -1,31 +1,61 @@
 $(document).ready(function() {
 
-    $(".subscribeButton").click(function() {
-        var button = $(this);
-        var isSubscribed = button.data("check") === true;
-        var comicId = button.data("comic-id");
-        var resultMessage = button.siblings(".resultMessage");
+$(".subscribeButton").click(function() {
+    var button = $(this);
+    var isSubscribed = button.data("check") === true;
+    var comicId = button.data("comic-id");
+    var resultMessage = button.siblings(".resultMessage");
 
-        $.ajax({
-            type: "POST",
-            url: "/check",
-            data: JSON.stringify({"Check": !isSubscribed, "comicId": comicId}),
-            contentType: "application/json; charset=utf-8",
-            dataType: "json",
-            success: function(data) {
-                resultMessage.text(data.message);
-                if (!isSubscribed) {
-                    button.text("UnCheck");
-                } else {
-                    button.text("Check");
-                }
-                button.data("check", !isSubscribed);
-            },
-            error: function(error) {
-                console.log(error);
+    $.ajax({
+        type: "POST",
+        url: "/check",
+        data: JSON.stringify({"Check": !isSubscribed, "comicId": comicId}),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function(data) {
+            resultMessage.text(data.message);
+            if (!isSubscribed) {
+                button.text("UnCheck");
+                button.removeClass("btn-outline-info").addClass("btn-outline-warning");
+            } else {
+                button.text("Check");
+                button.removeClass("btn-outline-warning").addClass("btn-outline-info");
             }
-        });
+            button.data("check", !isSubscribed);
+        },
+        error: function(error) {
+            console.log(error);
+        }
     });
+});
+
+$(".checkButton").click(function() {
+    var button = $(this);
+    var isSubscribed = button.data("check") === true;
+    var comicId = button.data("comic-id");
+    var resultMessage = button.siblings(".resultMessage");
+
+    $.ajax({
+        type: "POST",
+        url: "/check",
+        data: JSON.stringify({"Check": !isSubscribed, "comicId": comicId}),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function(data) {
+            resultMessage.text(data.message);
+            if (!isSubscribed) {
+                button.text("UnCheck");
+            } else {
+                button.text("Check");
+            }
+            button.data("check", !isSubscribed);
+        },
+        error: function(error) {
+            console.log(error);
+        }
+    });
+});
+
     $(".followButton").click(function() {
         var button = $(this);
         var isSubscribed = button.data("follow") === true;

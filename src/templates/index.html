@@ -1,57 +1,110 @@
 {% include "header.html" %}
-<!--hero section-->
-<div class="container col-xxl-8 px-4 py-5">
-<div class="row flex-lg-row-reverse align-items-center g-5 py-5">
-  <div class="col-10 col-sm-8 col-lg-6">
-    <img src="./static/img/bookshelf.jpg" class="d-block mx-lg-auto img-fluid" alt="Bootstrap Themes" width="300" height="250" loading="lazy">
-  </div>
-  <div class="col-lg-6">
-    <h1 class="display-8 fw-bold text-body-emphasis lh-1 mb-3">Welcome to ComicTracker: Embark on a Journey of Passion for Comics Together</h1>
-    <p class="lead">Are you an avid comic book enthusiast who loves to immerse yourself in captivating worlds and follow the exciting journeys of your favorite characters? Look no further – ComicTracker is here to revolutionize your comic reading experience.</p>
-    <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-<!--      <button type="button" class="btn btn-primary btn-lg px-4 me-md-2">Primary</button>-->
-<!--      <button type="button" class="btn btn-outline-secondary btn-lg px-4">Default</button>-->
-    </div>
-  </div>
-</div>
-</div>
+<style>
+  .featurette-heading span.text-body-secondary {
+    background-image: linear-gradient(to bottom, #ff9900, #ffcc00);
+    background-clip: text;
+    color: transparent;
+  }
+  .image-container {
+  max-width: 600px; /* Kích thước tối đa cho hình ảnh */
+  position: relative;
+  overflow: hidden;
+}
 
-<!--feature section-->
-<div class="container px-4 py-5" id="featured-3">
-<!--    <h2 class="pb-2 border-bottom">Columns with icons</h2>-->
-    <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
-      <div class="feature col">
-        <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient fs-2 mb-3">
-          <svg class="bi" width="1em" height="1em"><use xlink:href="#collection"></use></svg>
-        </div>
-        <h3 class="fs-2 text-body-emphasis">Release Reminders</h3>
-        <p>Never miss a release date again! Set up release reminders, and we'll make sure you're informed whenever a new issue of your tracked series is about to hit the shelves.</p>
-        <a href="#" class="icon-link">
-          Call to action
-          <svg class="bi"><use xlink:href="#chevron-right"></use></svg>
-        </a>
-      </div>
-      <div class="feature col">
-        <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient fs-2 mb-3">
-          <svg class="bi" width="1em" height="1em"><use xlink:href="#people-circle"></use></svg>
-        </div>
-        <h3 class="fs-2 text-body-emphasis">Effortless Series Management</h3>
-        <p>Easily create and manage a personalized list of comic series you're currently purchasing. With just a few clicks, you can add new series, mark issues as acquired, and stay up-to-date with release schedules.</p>
-        <a href="#" class="icon-link">
-          Call to action
-          <svg class="bi"><use xlink:href="#chevron-right"></use></svg>
-        </a>
-      </div>
-      <div class="feature col">
-        <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient fs-2 mb-3">
-          <svg class="bi" width="1em" height="1em"><use xlink:href="#toggles2"></use></svg>
-        </div>
-        <h3 class="fs-2 text-body-emphasis">Expense Trends</h3>
-        <p>Identify trends in your comic-related expenses. Are you spending more during certain months or on particular series? The Financial Insight feature provides insights that empower you to adjust your purchasing habits.</p>
-        <a href="#" class="icon-link">
-          Call to action
-          <svg class="bi"><use xlink:href="#chevron-right"></use></svg>
-        </a>
+.move-image {
+  width: 100%;
+  height: auto;
+  animation: moveImage 5s linear infinite; /* Định nghĩa animation với thời gian 5 giây và lặp vô hạn */
+}
+
+@keyframes moveImage {
+  0% {
+    transform: translateX(-100%); /* Di chuyển ảnh ra xa bên trái */
+  }
+  100% {
+    transform: translateX(100%); /* Di chuyển ảnh ra xa bên phải */
+  }
+}
+</style>
+
+
+<div class="container col-xxl-8 px-4 py-5" style="background-image: url('./static/img/wallpaper.jpg'); background-size: cover; background-repeat: no-repeat; min-height: 600px;">
+  <div class="row flex-lg-row-reverse align-items-center g-5 py-5">
+    <div class="col-10 col-sm-8 col-lg-6">
+    </div>
+    <div class="col-lg-6">
+      <h1 class="display-8 fw-bold text-warning lh-1 mb-3 montserrat-text">Welcome to ComicTracker: Embark on a Journey of Passion for Comics Together</h1>
+      <p class="lead text-warning open-text">Are you an avid comic book enthusiast who loves to immerse yourself in captivating worlds and follow the exciting journeys of your favorite characters? Look no further – ComicTracker is here to revolutionize your comic reading experience.</p>
+      <div class="d-grid gap-2 d-md-flex justify-content-md-start">
       </div>
     </div>
   </div>
+</div>
+<div class="container my-5 border-top">
+  <div class="row featurette">
+    <div class="col-md-7">
+      <h2 class="featurette-heading fw-normal lh-1"><span class="text-body-secondary montserrat-text">Release Reminders</span></h2>
+      <p class="lead open-text">Never miss a release date again! Set up release reminders, and we'll make sure you're informed whenever a new issue of your tracked series is about to hit the shelves.</p>
+      <a href="{{ url_for('login') }}" class="btn btn-info">Login</a>
+      <a href="{{ url_for('tracking') }}" class="btn btn-warning mx-2 open-text">Tracking</a>
+    </div>
+    <div class="col-md-5">
+      <div class="image-container">
+        <img src="{{ url_for('static', filename='./img/tracking.jpg') }}" class="move-image" style="max-width: 600px; height: 300px;">
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container my-5 border-top">
+  <div class="row featurette">
+    <div class="col-md-7 order-md-2 px-5">
+      <h2 class="featurette-heading fw-normal lh-1"><span class="text-body-secondary montserrat-text">Effortless Series Management</span></h2>
+      <p class="lead open-text">Easily create and manage a personalized list of comic series you're currently purchasing. With just a few clicks, you can add new series, mark issues as acquired, and stay up-to-date with release schedules.</p>
+      <a href="{{ url_for('login') }}" class="btn btn-info">Login</a>
+      <a href="{{ url_for('schedule') }}" class="btn btn-warning mx-2 open-text">Schedule</a>
+    </div>
+    <div class="col-md-5 order-md-1">
+      <div class="image-container">
+        <img src="{{ url_for('static', filename='./img/schedule.jpg') }}" class="move-image" style="max-width: 600px; height: 300px;">
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container my-5 border-top">
+  <div class="row featurette">
+    <div class="col-md-7">
+      <h2 class="featurette-heading fw-normal lh-1"><span class="text-body-secondary montserrat-text">Expense Trends</span></h2>
+      <p class="lead open-text">Identify trends in your comic-related expenses. Are you spending more during certain months or on particular series? The Financial Insight feature provides insights that empower you to adjust your purchasing habits.</p>
+      <a href="{{ url_for('login') }}" class="btn btn-info">Login</a>
+      <a href="{{ url_for('finance') }}" class="btn btn-warning mx-2 open-text">Finance</a>
+    </div>
+    <div class="col-md-5">
+      <div class="image-container">
+        <img src="{{ url_for('static', filename='./img/finance.jpg') }}" class="move-image" style="max-width: 600px; height: 300px;">
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container border-top">
+  <div class="row my-2">
+    <h3 class="text-info montserrat-text" style="text-decoration: underline;">Newly updated comics</h3>
+    {% for comic in comics %}
+      <div class="col-2 my-1">
+        <div class="card">
+          <img class="card-img-top" src="{{ comic.img }}" alt="Card image cap">
+        </div>
+        <div class="text-container">
+          <a href="{{ url_for('info', index=comic.comic_id) }}"><p class="card-text open-text" style="font-size: larger;">{{ comic.name }}</p></a>
+          <p class="card-text text-muted">
+            {% if comic.volume == comic.name %}
+                Tập 1
+            {% else %}
+                {{ comic.volume }}
+            {% endif %}
+          </p>
+          <p class="card-text text-muted"><strong>{{ comic.price }} Đ</strong></p>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>

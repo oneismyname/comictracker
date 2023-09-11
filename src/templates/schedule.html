@@ -6,14 +6,31 @@
     top: 0.5rem;
     left: 1rem; /* Đặt vị trí nút button ở bên trái */
   }
+      .checkButton {
+    font-size: 12px;
+    position: absolute;
+    top: 0.5rem;
+    left: 1rem; /* Đặt vị trí nút button ở bên trái */
+}
+
 </style>
-<div class="container my-5">
-  <h2 class="mx-2">Schedule</h2>
-  <form action="/schedule" method="post" class="mx-2">
+
+<style>
+    /* Ẩn form mặc định */
+    #myForm {
+        display: none;
+    }
+</style>
+
+
+<div class="container my-2">
+<h2 class="mx-2 open-text">Schedule</h2>
+  <button id="showFormButton" class="btn btn-info open-text mx-2"></button>
+  <form action="/schedule" method="post" class="mx-2" id="myForm">
     <div class="form-row">
         <div class="form-group col-md-6">
             <label for="month-select" class="mx-4">Select month:</label>
-            <select name="selected_month" id="month-select" class="form-control my-2 mx-4">
+            <select onchange="monthChange(event)" name="selected_month" id="month-select" class="form-control my-2 mx-4" value="">
                 <option value="01">Tháng 01</option>
                 <option value="02">Tháng 02</option>
                 <option value="03">Tháng 03</option>
@@ -30,7 +47,9 @@
         </div>
         <div class="form-group col-md-6">
             <label for="year-select" class="mx-4">Select year:</label>
-            <select name="selected_year" id="year-select" class="form-control my-2 mx-4">
+            <select onchange="yearChange(event)" name="selected_year" id="year-select" class="form-control my-2 mx-4">
+                <option value="2018">2018</option>
+                <option value="2019">2019</option>
                 <option value="2020">2020</option>
                 <option value="2021">2021</option>
                 <option value="2022">2022</option>
@@ -43,20 +62,21 @@
         <button type="submit" class="btn btn-primary">Select</button>
     </div>
   </form>
+</div>
 
-  <div class="container my-5 ">
+  <div class="container my-2 ">
       {% for key, values in dict_1.items() %}
         <div class="row cards">
-            <div class="row text my-2 border-top">
-                <h3 class="text-primary">{{ key }}</h3>
+            <div class="row text my-2 custom-border">
+                <h3 class="text-secondary open-text">{{ key }}</h3>
             </div>
             {% for comic in values %}
-            <div class="col-2 my-1">
+            <div class="col-xl-2 col-md-4 col-6">
               <div class="card">
                 <img class="card-img-top" src="{{ comic.img }}" alt="Card image cap">
               </div>
               <div class="text-container">
-                <a href="{{ url_for('info', index=comic.comic_id) }}"><p class="card-text"><strong><em><span style="font-size: larger;">{{ comic.name }}</span></em></strong></p></a>
+                <a href="{{ url_for('info', index=comic.comic_id) }}"><p class="card-text open-text"><strong><em><span style="font-size: larger;">{{ comic.name }}</span></em></strong></p></a>
                 <p class="card-text text-muted">
                     {% if comic.volume == comic.name %}
                         Tập 1
@@ -67,7 +87,7 @@
                 <p class="card-text text-muted"><strong>{{ comic.price }} Đ</strong></p>
                 <div class="wrap">
                   <div>
-                    <button class="subscribeButton btn btn-info" data-comic-id="{{ comic.id }}" data-check="{% if dict_2[comic.id] == 'TRUE' %}true{% else %}false{% endif %}">
+                    <button class="checkButton btn btn-info" data-comic-id="{{ comic.id }}" data-check="{% if dict_2[comic.id] == 'TRUE' %}true{% else %}false{% endif %}">
                       {% if dict_2[comic.id] == 'TRUE' %}
                         UnCheck
                       {% else %}
@@ -85,28 +105,41 @@
   {% endfor %}
   </div>
 </div>
+
+
 <script>
-$(document).ready(function() {
-    const currentDate = new Date();
-    const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-    const currentYear = currentDate.getFullYear().toString();
 
-    document.getElementById('month-select').value = currentMonth;
-    document.getElementById('year-select').value = currentYear;
-});
- var monthSelect = document.getElementById("month-select");
-    var yearSelect = document.getElementById("year-select");
+var showFormButton = document.getElementById("showFormButton");
+    var myForm = document.getElementById("myForm");
 
-
-    var selectedMonth = localStorage.getItem("selectedMonth");
-    var selectedYear = localStorage.getItem("selectedYear");
+    var currentDate = new Date();
+    var currentMonth = currentDate.getMonth() + 1; // Tháng tính từ 0
+    var myMonth = document.getElementById("month-select");
+    myMonth.value = currentMonth
+    var myYear = document.getElementById("year-select");
+    let currentYear = currentDate.getFullYear().toString();
+    myYear.value = currentYear
 
 
-    monthSelect.addEventListener("change", function () {
-        localStorage.setItem("selectedMonth", this.value);
+    // Đặt giá trị của nút bấm
+    showFormButton.textContent = currentMonth + "-" + currentYear;
+
+    showFormButton.addEventListener("click", function() {
+        if (myForm.style.display === "none") {
+            myForm.style.display = "block";
+        } else {
+            myForm.style.display = "none";
+        }
     });
 
-    yearSelect.addEventListener("change", function () {
-        localStorage.setItem("selectedYear", this.value);
-    });
+    const monthChange = (e)=>{
+        currentMonth = e.target.value
+        myMonth.value = currentMonth
+        showFormButton.textContent = currentMonth + "-" + currentYear
+    }
+    const yearChange = (e)=>{
+        currentYear = e.target.value
+        myYear.value = currentYear
+        showFormButton.textContent = currentMonth + "-" + currentYear
+    }
 </script>

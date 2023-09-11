@@ -2,3 +2,6 @@
 __pycache__
 instance
 venv
+app.yaml
+comictracker-7b0ea082fc63.json
+.gcloudignore.txt
