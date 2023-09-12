@@ -33,7 +33,7 @@
     <div class="col-10 col-sm-8 col-lg-6">
     </div>
     <div class="col-lg-6">
-      <h1 class="display-8 fw-bold text-warning lh-1 mb-3 montserrat-text">Welcome to ComicTracker: Embark on a Journey of Passion for Comics Together</h1>
+      <h1 class="display-8 fw-bold text-warning lh-1 mb-3 poppins-text">Welcome to ComicTracker: Embark on a Journey of Passion for Comics Together</h1>
       <p class="lead text-warning open-text">Are you an avid comic book enthusiast who loves to immerse yourself in captivating worlds and follow the exciting journeys of your favorite characters? Look no further – ComicTracker is here to revolutionize your comic reading experience.</p>
       <div class="d-grid gap-2 d-md-flex justify-content-md-start">
       </div>
@@ -43,10 +43,9 @@
 <div class="container my-5 border-top">
   <div class="row featurette">
     <div class="col-md-7">
-      <h2 class="featurette-heading fw-normal lh-1"><span class="text-body-secondary montserrat-text">Release Reminders</span></h2>
+      <h2 class="featurette-heading fw-normal lh-1"><span class="text-body-secondary poppins-text">Release Reminders</span></h2>
       <p class="lead open-text">Never miss a release date again! Set up release reminders, and we'll make sure you're informed whenever a new issue of your tracked series is about to hit the shelves.</p>
-      <a href="{{ url_for('login') }}" class="btn btn-info">Login</a>
-      <a href="{{ url_for('tracking') }}" class="btn btn-warning mx-2 open-text">Tracking</a>
+      <a href="{{ url_for('tracking') }}" class="btn btn-warning open-text">Tracking</a>
     </div>
     <div class="col-md-5">
       <div class="image-container">
@@ -60,8 +59,7 @@
     <div class="col-md-7 order-md-2 px-5">
       <h2 class="featurette-heading fw-normal lh-1"><span class="text-body-secondary montserrat-text">Effortless Series Management</span></h2>
       <p class="lead open-text">Easily create and manage a personalized list of comic series you're currently purchasing. With just a few clicks, you can add new series, mark issues as acquired, and stay up-to-date with release schedules.</p>
-      <a href="{{ url_for('login') }}" class="btn btn-info">Login</a>
-      <a href="{{ url_for('schedule') }}" class="btn btn-warning mx-2 open-text">Schedule</a>
+      <a href="{{ url_for('schedule') }}" class="btn btn-warning open-text">Schedule</a>
     </div>
     <div class="col-md-5 order-md-1">
       <div class="image-container">
@@ -73,10 +71,9 @@
 <div class="container my-5 border-top">
   <div class="row featurette">
     <div class="col-md-7">
-      <h2 class="featurette-heading fw-normal lh-1"><span class="text-body-secondary montserrat-text">Expense Trends</span></h2>
+      <h2 class="featurette-heading fw-normal lh-1"><span class="text-body-secondary poppins-text">Expense Trends</span></h2>
       <p class="lead open-text">Identify trends in your comic-related expenses. Are you spending more during certain months or on particular series? The Financial Insight feature provides insights that empower you to adjust your purchasing habits.</p>
-      <a href="{{ url_for('login') }}" class="btn btn-info">Login</a>
-      <a href="{{ url_for('finance') }}" class="btn btn-warning mx-2 open-text">Finance</a>
+      <a href="{{ url_for('finance') }}" class="btn btn-warning open-text">Finance</a>
     </div>
     <div class="col-md-5">
       <div class="image-container">
@@ -87,7 +84,7 @@
 </div>
 <div class="container border-top">
   <div class="row my-2">
-    <h3 class="text-info montserrat-text" style="text-decoration: underline;">Newly updated comics</h3>
+    <h3 class="text-info poppins-text" style="text-decoration: underline;">Newly updated comics</h3>
     {% for comic in comics %}
       <div class="col-2 my-1">
         <div class="card">

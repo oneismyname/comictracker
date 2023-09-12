@@ -50,14 +50,31 @@
         border-radius: 10px;
     }
     .overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6); /* Màu nền đen với độ mờ 0.6 */
-  z-index: 999; /* Đặt z-index cao hơn để che phủ phần nền */
-  display: none; /* Ban đầu ẩn lớp overlay */
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6); /* Màu nền đen với độ mờ 0.6 */
+      z-index: 999; /* Đặt z-index cao hơn để che phủ phần nền */
+      display: none; /* Ban đầu ẩn lớp overlay */
+    }
+.custom-button {
+    color: #fff; /* Màu chữ trắng */
+    font-size: 16px; /* Kích thước chữ */
+    font-weight: bold; /* Độ đậm của chữ */
+    padding: 10px 20px; /* Khoảng cách giữa nút và nội dung */
+    text-transform: uppercase; /* Chuyển đổi chữ thành chữ in hoa */
+    text-decoration: none; /* Loại bỏ gạch chân (underline) cho liên kết trong nút */
+    border-radius: 4px; /* Bo góc nút */
+}
+
+.custom-button:hover {
+    color: #fff; /* Màu chữ trắng khi hover */
+}
+.custom-button a {
+    color: #fff !important; /* Màu chữ trắng và sử dụng !important để ghi đè lên các quy tắc khác */
+    text-decoration: none; /* Loại bỏ gạch chân (underline) cho liên kết */
 }
 </style>
 
@@ -131,6 +148,53 @@
           </tbody>
         </table>
     </div>
+    <div class="row border-top mt-2 mx-auto">
+        {% for comment in comment %}
+        <div class="col-1 mt-2">
+            <img class="rounded" src="{{ comment.author.avatar }}" width="100" height="100">
+        </div>
+        <div class="col-11 mt-2 px-3">
+            <div class="row">
+                <div class="col-5">
+                    <h3 class="poppins-text">{{ comment.author.name }}</h3>
+                </div>
+                <div class="col-4">
+                    <small class="poppins-text">{{ comment.time_post }}</small>
+                </div>
+            </div>
+            <p class="poppins-text">{{ comment.content }}</p>
+            {% if current_user.id == comment.author.id %}
+                <small><a href="{{ url_for('delete_comment', index=comment.id, comic_id = index) }}">delete</a></small>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <form method="post" action="">
+                {{ form.hidden_tag() }}
+                <fieldset class="form-group">
+                    <legend class="border-bottom mb-4 poppins-text">Comment</legend>
+                    <div class="form-group">
+                        <p class="poppins-text">Add Your Comment</p>
+                        {% if form.content.errors %}
+                            {{ form.content(class="form-control form-control-lg is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.content.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.content(class="form-control form-control-lg my-2") }}
+                        {% endif %}
+                    </div>
+                </fieldset>
+                <div class="form-group mt-2 mb-5">
+                    {{ form.submit(class="btn btn-info") }}
+                </div>
+            </form>
+        </div>
+    </div>
     <div class="overlay" id="overlay">
         {% for comic in comic %}
         <div id="modal-container-{{comic.id}}" class="custom">
@@ -143,9 +207,9 @@
                     <p class="mt-2 open-text"><strong>Release Date:</strong> {{ comic.release_date }}</p>
                     <p class="mt-2 open-text"><strong>Publisher:</strong> {{ comic.publisher }}</p>
                     <p class="mt-2 open-text"><strong>Price:</strong> {{ comic.price }} Đ</p>
-                    <button class="btn btn-danger mt-5"><a href="https://www.fahasa.com/catalogsearch/result/?q={{ comic.name.upper() }}%20-%20{{ comic.volume }}" target="_blank">FAHASA</a></button>
-                    <button class="btn btn-info mt-5"><a href="https://tiki.vn/search?q={{ comic.name.upper() }}%20-%20{{ comic.volume }}" target="_blank">TIKI</a></button>
-                    <button class="btn btn-warning mt-5"><a href="https://shopee.vn/search?keyword={{ comic.name.upper() }}%20-%20{{ comic.volume }}" target="_blank">SHOPEE</a></button>
+                    <button class="btn btn-danger custom-button mt-5"><a href="https://www.fahasa.com/searchengine?q={{ comic.name.upper() }}%20-%20{{ comic.volume }}" target="_blank">FAHASA</a></button>
+                    <button class="btn btn-info custom-button mt-5"><a href="https://tiki.vn/search?q={{ comic.name.upper() }}%20-%20{{ comic.volume }}" target="_blank">TIKI</a></button>
+                    <button class="btn btn-warning custom-button mt-5"><a href="https://shopee.vn/search?keyword={{ comic.name.upper() }}%20-%20{{ comic.volume }}" target="_blank">SHOPEE</a></button>
                 </div>
                 <div class="col-1">
                     <button id="btn-{{comic.id}}" class="btn" style="position: absolute; top: 0; right: 0;"><i class="fa-solid fa-xmark"></i></button>

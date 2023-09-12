@@ -7,12 +7,11 @@ import smtplib
 import os
 from sqlalchemy import func, select
 from google.cloud import storage
-from PIL import Image
 import secrets
 
 from src import app, login_manager
-from .database import User, db, Comic, Mapping, Schedule, Checking
-from .forms import RegisterForm, LoginForm, AddForm, SearchForm, ForgotForm, UpdateForm
+from .database import User, db, Comic, Mapping, Schedule, Checking, Comment
+from .forms import RegisterForm, LoginForm, AddForm, SearchForm, ForgotForm, UpdateForm, CommentForm, EditForm
 
 
 my_email = os.environ.get("email")
@@ -139,6 +138,26 @@ def set_avatar(avatar):
         url = blob.public_url
         current_user.avatar = url
         db.session.commit()
+
+
+def calc_money(new_month):
+    month_set = {}
+    for item in new_month:
+        month_set[item[0]] = []
+    for item in new_month:
+        month_set[item[0]].append(item[2])
+    publish_set = {}
+    for item in new_month:
+        publish_set[item[1]] = []
+    for item in new_month:
+        publish_set[item[1]].append(item[2])
+    month = [item for item in month_set.keys()]
+    amount = [sum(item) for item in month_set.values()]
+    publisher = [item for item in publish_set.keys()]
+    publisher_amount = [sum(item) for item in publish_set.values()]
+    year_amount = sum(amount)
+    formatted_year_amount = f"{year_amount:,}"
+    return month,amount, publisher, publisher_amount, formatted_year_amount
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -365,11 +384,13 @@ def schedule():
             query = selected_month_shedule()
             schedule = month_schedule(query)
             list_check = bought_or_not(schedule)
-            return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= list_check)
+            current_month = f"{request.form['selected_month']}-{request.form['selected_year']}"
+            return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= list_check, current_month=current_month)
         query = db.session.query(Schedule.release_date).filter(func.strftime('%Y-%m', Schedule.release_date) == datetime.today().strftime('%Y-%m')).distinct().order_by(Schedule.release_date).all()
         schedule = month_schedule(query)
         list_check = bought_or_not(schedule)
-        return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= list_check)
+        current_month = datetime.today().strftime('%m-%Y')
+        return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= list_check, current_month=current_month)
     else:
         if request.method == "POST":
             query = selected_month_shedule()
@@ -412,37 +433,32 @@ def finance():
     if current_user.is_authenticated:
         result = db.session.query(
             func.strftime('%Y-%m', Schedule.release_date).label('month'),
+            Schedule.publisher,
             func.sum(Checking.price).label('total_amount')
         ).join(Checking).filter(
             Checking.user_id == current_user.id,
             Checking.bought == True
-        ).group_by('month').order_by('month').all()
+        ).group_by('month', Schedule.publisher).order_by('month').all()
         if request.method == "POST":
             new_month = []
             for item in result:
                 if item[0].strip("-")[0:4] == request.form["selected_year"]:
                     new_month.append(item)
-            month = [item[0] for item in new_month]
-            amount = [item[1] for item in new_month]
+            month, amount, publisher, publisher_amount, formatted_year_amount = calc_money(new_month)
             selected_year = request.form["selected_year"]
-            year_amount = sum(amount)
-            formatted_year_amount = f"{year_amount:,}"
         else:
             new_month = []
             for item in result:
                 if item[0].strip("-")[0:4] == datetime.strftime(datetime.today(),'%Y'):
                     new_month.append(item)
-            month = [item[0] for item in new_month]
-            amount = [item[1] for item in new_month]
-            year_amount = sum(amount)
-            formatted_year_amount = f"{year_amount:,}"
-            selected_year = datetime.strftime(datetime.today(),'%Y')
-        total_amount = sum([item[1] for item in result])
+            month,amount, publisher, publisher_amount, formatted_year_amount = calc_money(new_month)
+            selected_year = datetime.strftime(datetime.today(), '%Y')
+        total_amount = sum([item[2] for item in result])
         formatted_total_amount = f"{total_amount:,}"
         return render_template('finance.html',
                                user=current_user, month=month, amount=amount,
                                total_amount=formatted_total_amount, year_amount=formatted_year_amount,
-                               selected_year=selected_year)
+                               selected_year=selected_year, publisher=publisher, publisher_amount=publisher_amount)
     else:
         return render_template('intro.html', user=current_user)
 
@@ -466,7 +482,7 @@ def forgot_password():
     return render_template("forgot.html", form=form, user= current_user)
 
 
-@app.route("/info/<index>")
+@app.route("/info/<index>", methods=["GET", "POST"])
 def info(index):
     if current_user.is_authenticated:
         first_comic = db.session.query(Schedule).filter(Schedule.comic_id == index).order_by(Schedule.release_date).first()
@@ -499,7 +515,34 @@ def info(index):
             follow_check = "TRUE"
         else:
             follow_check = "FALSE"
-        return render_template('info.html', comic=query, user=current_user, dict = list_check, follow_check=follow_check, index=index, first=first_comic)
+        form = CommentForm()
+        if form.validate_on_submit():
+            with app.app_context():
+                new_comment = Comment(
+                    user_id = current_user.id,
+                    comic_id = index,
+                    time_post= datetime.today(),
+                    content= form.content.data
+                )
+                db.session.add(new_comment)
+                db.session.commit()
+                flash("Successfully post comment", 'success')
+                return redirect(url_for('info', index=index))
+        comment = Comment.query.filter(Comment.comic_id == index).all()
+        return render_template('info.html', comic=query, user=current_user, dict = list_check, follow_check=follow_check, index=index, first=first_comic, form=form, comment=comment)
     else:
+        form = CommentForm()
+        if form.validate_on_submit():
+            flash("Login to leave a comment", 'danger')
+        comment = Comment.query.filter(Comment.comic_id == index).all()
         query = db.session.query(Schedule).filter(Schedule.comic_id == index).order_by(Schedule.release_date).all()
-        return render_template('info.html', comic=query, user=current_user, dict={}, index=index, first=query[0])
+        return render_template('info.html', comic=query, user=current_user, dict={}, index=index, first=query[0], form=form, comment=comment)
+
+
+@app.route("/delete/comment/<index>/<comic_id>")
+def delete_comment(index, comic_id):
+    comment = Comment.query.filter(Comment.id == index).first()
+    db.session.delete(comment)
+    db.session.commit()
+    return redirect(url_for('info', index=comic_id))
+

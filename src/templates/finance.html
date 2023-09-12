@@ -1,61 +1,138 @@
 {% include 'header.html' %}
-
+<style>
+    #myForm {
+    display: none;
+}
+</style>
 <body>
-<div class="container">
-    <div>
-        <h2 class="montserrat-text">The amount of money you use to buy comics is on a month</h2>
-    </div>
-    <div class="row">
-        <div class="col-8">
-          <canvas id="myChart" style="max-width: 1000px;"></canvas>
-        </div>
-        <div class="col-4">
-            <form action="/finance" method="post" class="form-inline">
-                <div class="form-group mb-2">
-                    <label for="year-select" class="form-label">Select year:</label>
-                    <select name="selected_year" id="year-select" class="form-control">
-                        <option value=""></option>
-                    </select>
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="poppins-text mx-auto text-center">Comic Purchase Spending Graph</h2>
+                <button id="showFormButton" class="btn btn-info open-text">{{ selected_year }}</button>
+                <form action="/finance" method="post" id="myForm">
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="year-select" >Select year:</label>
+                        <select onchange="yearChange(event)" name="selected_year" id="year-select" class="form-control my-2">
+                            <option value="2018">2018</option>
+                            <option value="2019">2019</option>
+                            <option value="2020">2020</option>
+                            <option value="2021">2021</option>
+                            <option value="2022">2022</option>
+                            <option value="2023">2023</option>
+                            <option value="2024">2024</option>
+                        </select>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary mb-2">Select</button>
-            </form>
-            <p class="mb-0 text-danger open-text">Total amount is <span class="font-weight-bold">{{ total_amount }} Đ</span></p>
-            <p class="text-primary open-text">Total amount is <span class="font-weight-bold">{{ year_amount }} Đ</span> in {{ selected_year }}</p>
+                <div class="text-center form-group col-md-1">
+                    <button type="submit" class="btn btn-primary">Select</button>
+                </div>
+              </form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <p class="mb-0 text-danger poppins-text">Total amount is <span class="font-weight-bold">{{ total_amount }} Đ</span></p>
+                <p class="text-primary poppins-text">Total amount is <span class="font-weight-bold">{{ year_amount }} Đ</span> in {{ selected_year }}</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-8">
+              <canvas id="myChart" style="max-width: 1000px;"></canvas>
+            </div>
+            <div class="col-4">
+                <canvas id="myChart1" style="max-width: 500px;"></canvas>
+            </div>
         </div>
     </div>
+</body>
 
 <script>
-var xValues = {{ month | tojson }};
-var yValues = {{ amount | tojson }};
-var barColors = ["#2f4b7c", "#2f4b7c","#2f4b7c","#2f4b7c","#2f4b7c","#2f4b7c","#2f4b7c","#2f4b7c",,"#2f4b7c","#2f4b7c","#2f4b7c","#2f4b7c"];
+const ctx = document.getElementById('myChart');
+  var xValues = {{ month | tojson }};
+  var yValues = {{ amount | tojson }};
 
-new Chart("myChart", {
-  type: "bar",
-  data: {
-    labels: xValues,
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: xValues,
+      datasets: [
+        {
+          label: {{ selected_year }},
+          data: yValues,
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1
+        }
+      ]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+
+  const ctx1 = document.getElementById('myChart1'); // Sử dụng biến ctx1 cho biểu đồ thứ hai
+  var publish = {{ publisher | tojson }};
+  var publish_amount = {{ publisher_amount | tojson }};
+  const data = {
+    labels: publish,
     datasets: [{
-      backgroundColor: barColors,
-      data: yValues
+      label: 'Money for publisher',
+      data: publish_amount,
+      backgroundColor: [
+      'rgb(255, 99, 132)',
+      'rgb(54, 162, 235)',
+      'rgb(255, 205, 86)',
+      'rgb(75, 192, 192)', // Màu thứ tư
+      'rgb(153, 102, 255)', // Màu thứ năm
+      'rgb(255, 159, 64)',  // Màu thứ sáu
+      'rgb(30, 144, 255)'   // Màu thứ bảy
+    ],
+      hoverOffset: 4
     }]
-  },
-  options: {
-    legend: {display: false},
-    title: {
-      display: true,
-      text: "Your money spend for comic in a month"
-    }
-  }
-});
+  };
 
-    var yearSelect = document.getElementById("year-select");
-    var currentYear = new Date().getFullYear(); // Lấy năm hiện tại
-    for (var year = 2018; year <= currentYear; year++) {
-        var option = document.createElement("option");
-        option.value = year;
-        option.text = year;
-        yearSelect.appendChild(option);
+  new Chart(ctx1, { // Sử dụng biến ctx1 cho biểu đồ thứ hai
+    type: 'doughnut',
+    data: data,
+    options: {
+    cutoutPercentage: 10, // Thay đổi giá trị này để điều chỉnh kích thước của biểu đồ donut
     }
-    yearSelect.value = currentYear.toString();
+  });
+
+var showFormButton = document.getElementById("showFormButton");
+
+
+    var currentDate = new Date();
+    var myYear = document.getElementById("year-select");
+    let currentYear = currentDate.getFullYear().toString();
+    myYear.value = currentYear
+
+
+    // Đặt giá trị của nút bấm
+
+
+    showFormButton.addEventListener("click", function() {
+        if (myForm.style.display === "none") {
+            myForm.style.display = "block";
+        } else {
+            myForm.style.display = "none";
+        }
+    });
+
+    const monthChange = (e)=>{
+        currentMonth = e.target.value
+        myMonth.value = currentMonth
+        showFormButton.textContent = currentMonth + "-" + currentYear
+    }
+    const yearChange = (e)=>{
+        currentYear = e.target.value
+        myYear.value = currentYear
+        showFormButton.textContent = currentMonth + "-" + currentYear
+    }
 </script>
-</div>
-</body>

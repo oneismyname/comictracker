@@ -16,6 +16,7 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(1000), nullable=False)
     following = db.relationship('Mapping', backref='user')
     check = db.relationship('Checking', backref='check')
+    comment_author = db.relationship('Comment', backref='author')
 
 
 class Comic(db.Model):
@@ -24,6 +25,7 @@ class Comic(db.Model):
     img_cover = db.Column(db.String(1000))
     follower = db.relationship('Mapping', backref='comic')
     schedule_location = db.relationship('Schedule', backref='schedule_location')
+    comment_on_comic = db.relationship('Comment', backref='comic_comment')
 
 
 class Schedule(db.Model):
@@ -44,3 +46,11 @@ class Checking(db.Model):
     schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'), primary_key=True)
     bought = db.Column(db.Boolean, default=False)
     price = db.Column(db.Integer)
+
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key= True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    comic_id = db.Column(db.Integer, db.ForeignKey('comic.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    time_post = db.Column(db.DateTime, nullable=False)

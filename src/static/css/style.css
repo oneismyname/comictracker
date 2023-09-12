@@ -91,6 +91,10 @@
     font-family: 'Montserrat', sans-serif;
 }
 
+.poppins-text {
+    font-family: 'Poppins', sans-serif;
+}
+
 .custom-border {
     border-top: 2px solid red; /* Độ đậm và màu đường border */
 }
