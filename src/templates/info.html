@@ -148,12 +148,17 @@
           </tbody>
         </table>
     </div>
-    <div class="row border-top mt-2 mx-auto">
-        {% for comment in comment %}
-        <div class="col-1 mt-2">
+    <div class="row">
+        <div class="col mt-3 border-top">
+            <h3 class="poppins-text">User Comment</h3>
+        </div>
+    </div>
+    {% for comment in comment %}
+    <div class="row mt-4">
+        <div class="col-1">
             <img class="rounded" src="{{ comment.author.avatar }}" width="100" height="100">
         </div>
-        <div class="col-11 mt-2 px-3">
+        <div class="col-11 mt-2 px-3 border">
             <div class="row">
                 <div class="col-5">
                     <h3 class="poppins-text">{{ comment.author.name }}</h3>
@@ -162,13 +167,13 @@
                     <small class="poppins-text">{{ comment.time_post }}</small>
                 </div>
             </div>
-            <p class="poppins-text">{{ comment.content }}</p>
+            <p class="poppins-text larger-font">{{ comment.content }}</p>
             {% if current_user.id == comment.author.id %}
                 <small><a href="{{ url_for('delete_comment', index=comment.id, comic_id = index) }}">delete</a></small>
             {% endif %}
         </div>
-        {% endfor %}
     </div>
+    {% endfor %}
     <div class="row">
         <div class="col-12">
             <form method="post" action="">
@@ -200,18 +205,16 @@
         <div id="modal-container-{{comic.id}}" class="custom">
             <div class="row">
                 <div class="col-5" >
-                    <img src="{{ comic.img }}" class="mx-2 my-2" style="width: 300px; height: 400px;"   >
+                    <img src="{{ comic.img }}" class="mx-2 my-2" style="width: 300px; height: 350px;"   >
                 </div>
-                <div class="col-5 mt-3 mx-2" style="width: 400px; height: 300px;">
+                <div class="col-5 mt-3 mx-auto" style="width: 375px; height: 300px;">
                     <h2 class="montserrat-text"><strong>{{ comic.name }} - {{ comic.volume }}</strong></h2>
                     <p class="mt-2 open-text"><strong>Release Date:</strong> {{ comic.release_date }}</p>
                     <p class="mt-2 open-text"><strong>Publisher:</strong> {{ comic.publisher }}</p>
                     <p class="mt-2 open-text"><strong>Price:</strong> {{ comic.price }} Đ</p>
-                    <button class="btn btn-danger custom-button mt-5"><a href="https://www.fahasa.com/searchengine?q={{ comic.name.upper() }}%20-%20{{ comic.volume }}" target="_blank">FAHASA</a></button>
-                    <button class="btn btn-info custom-button mt-5"><a href="https://tiki.vn/search?q={{ comic.name.upper() }}%20-%20{{ comic.volume }}" target="_blank">TIKI</a></button>
-                    <button class="btn btn-warning custom-button mt-5"><a href="https://shopee.vn/search?keyword={{ comic.name.upper() }}%20-%20{{ comic.volume }}" target="_blank">SHOPEE</a></button>
-                </div>
-                <div class="col-1">
+                    <button class="btn btn-danger custom-button mt-5 mx-2"><a href="https://www.fahasa.com/searchengine?q={{ comic.name.upper() }}%20-%20{{ comic.volume }}" target="_blank">FAHASA</a></button>
+                    <button class="btn btn-info custom-button mt-5 mx-2"><a href="https://tiki.vn/search?q={{ comic.name.upper() }}%20-%20{{ comic.volume }}" target="_blank">TIKI</a></button>
+                    <button class="btn btn-warning custom-button mt-5 mx-2"><a href="https://shopee.vn/search?keyword={{ comic.name.upper() }}%20-%20{{ comic.volume }}" target="_blank">SHOPEE</a></button>
                     <button id="btn-{{comic.id}}" class="btn" style="position: absolute; top: 0; right: 0;"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             </div>

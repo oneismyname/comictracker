@@ -5,10 +5,10 @@
 }
 </style>
 <body>
-    <div class="container">
+    <div class="container border my-5">
         <div class="row">
             <div class="col-12">
-                <h2 class="poppins-text mx-auto text-center">Comic Purchase Spending Graph</h2>
+                <h2 class="poppins-text mx-auto text-center my-3">Comic Purchase Spending Graph</h2>
                 <button id="showFormButton" class="btn btn-info open-text">{{ selected_year }}</button>
                 <form action="/finance" method="post" id="myForm">
                 <div class="form-row">
@@ -33,12 +33,12 @@
         </div>
         <div class="row">
             <div class="col-12">
-                <p class="mb-0 text-danger poppins-text">Total amount is <span class="font-weight-bold">{{ total_amount }} Đ</span></p>
-                <p class="text-primary poppins-text">Total amount is <span class="font-weight-bold">{{ year_amount }} Đ</span> in {{ selected_year }}</p>
+                <p class="mb-0 text-danger poppins-text larger-font">Total amount is <span class="font-weight-bold">{{ total_amount }} Đ</span></p>
+                <p class="text-primary poppins-text larger-font">Total amount is <span class="font-weight-bold">{{ year_amount }} Đ</span> in {{ selected_year }}</p>
             </div>
         </div>
-        <div class="row">
-            <div class="col-8">
+        <div class="row my-5">
+            <div class="col-8 border">
               <canvas id="myChart" style="max-width: 1000px;"></canvas>
             </div>
             <div class="col-4">

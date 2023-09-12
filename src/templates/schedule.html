@@ -20,6 +20,11 @@
     #myForm {
         display: none;
     }
+    .custom a {
+    color: #000000 !important; /* Màu chữ trắng và sử dụng !important để ghi đè lên các quy tắc khác */
+    text-decoration: none; /* Loại bỏ gạch chân (underline) cho liên kết */
+    font-size: 20px;
+}
 </style>
 
 
@@ -67,24 +72,24 @@
   <div class="container my-2 ">
       {% for key, values in dict_1.items() %}
         <div class="row cards">
-            <div class="row text my-2 custom-border">
-                <h3 class="text-secondary open-text">{{ key }}</h3>
+            <div class="row text mt-2 custom-border">
+                <h3 class="text-secondary open-text mt-4">{{ key }}</h3>
             </div>
             {% for comic in values %}
             <div class="col-xl-2 col-md-4 col-6">
               <div class="card">
-                <img class="card-img-top" src="{{ comic.img }}" alt="Card image cap">
+                  <img class="card-img-top" src="{{ comic.img }}" alt="Card image cap">
               </div>
               <div class="text-container">
-                <a href="{{ url_for('info', index=comic.comic_id) }}"><p class="card-text open-text"><strong><em><span style="font-size: larger;">{{ comic.name }}</span></em></strong></p></a>
-                <p class="card-text text-muted">
+                <p class="card-text open-text custom"><strong><span><a href="{{ url_for('info', index=comic.comic_id) }}">{{ comic.name }}</a></span></strong></p>
+                <p class="card-text text-muted larger-font">
                     {% if comic.volume == comic.name %}
                         Tập 1
                     {% else %}
                         {{ comic.volume }}
                     {% endif %}
                 </p>
-                <p class="card-text text-muted"><strong>{{ comic.price }} Đ</strong></p>
+                <p class="card-text text-muted larger-font"><strong>{{ comic.price }} Đ</strong></p>
                 <div class="wrap">
                   <div>
                     <button class="checkButton btn btn-info" data-comic-id="{{ comic.id }}" data-check="{% if dict_2[comic.id] == 'TRUE' %}true{% else %}false{% endif %}">
