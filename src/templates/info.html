@@ -59,6 +59,30 @@
       z-index: 999; /* Đặt z-index cao hơn để che phủ phần nền */
       display: none; /* Ban đầu ẩn lớp overlay */
     }
+    .hide {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #F0F0F0;
+        pointer-events: none;
+        opacity: 0;
+        border-radius: 10px;
+        width: 600px;
+        height: 200px;
+    }
+    .reveal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #F0F0F0;
+        pointer-events: all;
+        opacity: 1;
+        border-radius: 10px;
+        width: 800px;
+        height: 200px;
+    }
 .custom-button {
     color: #fff; /* Màu chữ trắng */
     font-size: 16px; /* Kích thước chữ */
@@ -76,6 +100,47 @@
     color: #fff !important; /* Màu chữ trắng và sử dụng !important để ghi đè lên các quy tắc khác */
     text-decoration: none; /* Loại bỏ gạch chân (underline) cho liên kết */
 }
+
+.button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    text-decoration: none;
+    width: 80px; /* Đặt kích thước mong muốn tại đây */
+    height: 30px; /* Đặt kích thước mong muốn tại đây */
+    font-size: 14px; /* Đặt kích thước font chữ mong muốn tại đây */
+}
+.button:hover {
+    background-color: #0056b3;
+}
+.button-custom {
+    border: none; /* Loại bỏ viền */
+    background-color: transparent; /* Đặt màu nền thành trong suốt */
+    padding: 0; /* Loại bỏ padding */
+    cursor: pointer; /* Biểu tượng con trỏ khi hover */
+    color: inherit; /* Kế thừa màu chữ từ phần tử cha (giữ nguyên màu chữ hiện có) */
+    height: 0;
+    width: 0;
+}
+ul {
+    list-style-type: none; /* Loại bỏ dấu chấm */
+    padding: 0; /* Loại bỏ padding mặc định của danh sách */
+    margin-left: 20px;
+}
+.button-reply {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    text-decoration: none;
+    width: 120px; /* Đặt kích thước mong muốn tại đây */
+    height: 30px; /* Đặt kích thước mong muốn tại đây */
+    font-size: 14px; /* Đặt kích thước font chữ mong muốn tại đây */
+}
+
 </style>
 
 <div class="container my-2">
@@ -153,27 +218,117 @@
             <h3 class="poppins-text">User Comment</h3>
         </div>
     </div>
-    {% for comment in comment %}
-    <div class="row mt-4">
-        <div class="col-1">
-            <img class="rounded" src="{{ comment.author.avatar }}" width="100" height="100">
-        </div>
-        <div class="col-11 mt-2 px-3 border">
-            <div class="row">
-                <div class="col-5">
-                    <h3 class="poppins-text">{{ comment.author.name }}</h3>
+{% macro render_comments(comments) %}
+<ul>
+    {% for comment in comments %}
+    <li>
+        <div class="container">
+            <div class="row mt-2">
+                <div class="col-1">
+                    <img class="rounded" src="{{ comment.author.avatar }}" width="90" height="100">
                 </div>
-                <div class="col-4">
-                    <small class="poppins-text">{{ comment.time_post }}</small>
+                <div class="col-11 px-3 border" style="height: 125px; border-radius: 10px" id="expand-{{ comment.id }}">
+                    <div class="row">
+                        <div class="col-5">
+                            <h3 class="poppins-text">{{ comment.author.name }}</h3>
+                        </div>
+                        <div class="col-4">
+                            <small class="poppins-text" id="comment-time">
+                                {{ comment.time_post.strftime('%Y-%m-%d %H:%M') }}
+                            </small>
+                        </div>
+                    </div>
+                    <p class="poppins-text larger-font">{{ comment.content }}</p>
+                        <small><button id="reply-{{ comment.id }}" onclick="reply(this.id)" class="button">Reply</button></small>
+                        {% if current_user.id == comment.author.id %}
+                        <small><a href="{{ url_for('delete_comment', index=comment.id, comic_id = index) }}" class="button">Delete</a></small>
+                        <small>
+                            <button id="{{ comment.id }}" onclick="edit(this.id)" class="button">Edit</button>
+                        </small>
+                        {% endif %}
+                        {% if comment.replies.all() != [] %}
+                        <button id="show-{{ comment.id }}" onclick="show(this.id)" class="button-reply">Show Reply</button>
+                        {% endif %}
+                    <div id="cover">
+                        <div id="edit-container-{{ comment.id }}" class="hide">
+                            <form method="post" action="{{ url_for('edit', index=comment.id, comic_id=index) }}">
+                                {{ form.hidden_tag() }}
+                                <fieldset class="form-group">
+                                    <div class="form-group">
+                                        <div class="row border-bottom">
+                                            <p class="poppins-text text-info col-11">Edit Your Comment</p>
+                                            <button id="btn-{{comment.id}}" class="col-1 button-custom"><i class="fa-solid fa-xmark"></i></button>
+                                        </div>
+                                        {% if edit_form.edit.errors %}
+                                            {{ edit_form.edit(class="form-control form-control-lg is-invalid") }}
+                                            <div class="invalid-feedback">
+                                                {% for error in edit_form.edit.errors %}
+                                                    <span>{{ error }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            {{ edit_form.edit(class="form-control form-control-lg my-2") }}
+                                        {% endif %}
+                                    </div>
+                                </fieldset>
+                                <div class="form-group mt-2 mb-5">
+                                    {{ edit_form.submit(class="btn btn-info") }}
+                                </div>
+                            </form>
+                        </div>
+                        <div id="container-reply-{{ comment.id }}" class="hide">
+                            <form method="post" action="{{ url_for('reply', index=comment.id, comic_id=index) }}">
+                                {{ form.hidden_tag() }}
+                                <fieldset class="form-group">
+                                    <div class="form-group">
+                                        <div class="row border-bottom">
+                                            <p class="poppins-text text-info col-11 px-3">Reply Comment</p>
+                                            <button id="btn-reply-{{comment.id}}" class="col-1 button-custom"><i class="fa-solid fa-xmark"></i></button>
+                                        </div>
+                                        {% if reply_form.reply.errors %}
+                                            {{ reply_form.reply(class="form-control form-control-lg is-invalid") }}
+                                            <div class="invalid-feedback">
+                                                {% for error in reply_form.reply.errors %}
+                                                    <span>{{ error }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            {{ reply_form.reply(class="form-control form-control-lg my-2") }}
+                                        {% endif %}
+                                    </div>
+                                </fieldset>
+                                <div class="form-group mt-2 mb-5">
+                                    {{ reply_form.submit(class="btn btn-info") }}
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <p class="poppins-text larger-font">{{ comment.content }}</p>
-            {% if current_user.id == comment.author.id %}
-                <small><a href="{{ url_for('delete_comment', index=comment.id, comic_id = index) }}">delete</a></small>
+            {% if comment.replies.all() != [] %}
+                <div id="reply-show-{{ comment.id }}" class="hide">
+                    {{ render_comments(comment.replies) }}
+                </div>
             {% endif %}
         </div>
-    </div>
+    </li>
     {% endfor %}
+</ul>
+{% endmacro %}
+{{ render_comments(comments) }}
+    <div class="mt-3">
+    {% for page_num in comments.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+        {% if page_num %}
+            {% if comic.page == page_num %}
+                <a class="btn btn-info mb-4" href="{{ url_for('info',index=index, page=page_num) }}">{{ page_num }}</a>
+            {% else %}
+                <a class="btn btn-outline-info mb-4" href="{{ url_for('info',index=index, page=page_num) }}">{{ page_num }}</a>
+        {% endif %}
+    {% else %}
+        ...
+    {% endif %}
+    {% endfor %}
+    </div>
     <div class="row">
         <div class="col-12">
             <form method="post" action="">
@@ -250,10 +405,100 @@ function buyComic(comicId) {
     overlay.style.display = 'none';
   });
 
-  modal_container.addEventListener('click', (e)=>{
-    e.stopPropagation(); // Ngăn chặn sự kiện click từ việc lan truyền lên phía trên
+modal_container.addEventListener('click', (e)=>{
+    e.stopPropagation();
+});
+}
+
+function edit(commentId) {
+  const btn_open = document.getElementById(commentId);
+  const btn_close = document.getElementById('btn-' + commentId);
+
+  const edit_container = document.getElementById('edit-container-' + commentId);
+  const cover = document.getElementById('cover');
+
+  const divWithDefaultHeight = document.getElementById('expand-' + commentId);
+
+  btn_open.addEventListener('click', () => {
+    edit_container.classList.remove('hide');
+    edit_container.classList.add('reveal');
+    cover.style.display = 'block';
+
+
+    divWithDefaultHeight.style.height = '125px';
+  });
+
+  btn_close.addEventListener('click', () => {
+    edit_container.classList.remove('reveal');
+    edit_container.classList.add('hide');
+    cover.style.display = 'none';
+
+    divWithDefaultHeight.style.height = '125px';
+  });
+
+  cover.addEventListener('click', () => {
+    edit_container.classList.remove('reveal');
+    edit_container.classList.add('hide');
+    cover.style.display = 'none';
+
+
+    divWithDefaultHeight.style.height = '125px';
+  });
+
+  edit_container.addEventListener('click', (e) => {
+    e.stopPropagation();
   });
 }
 
+
+function reply(commentId) {
+  const btn_open = document.getElementById(commentId);
+  const btn_close = document.getElementById('btn-' + commentId);
+
+  const reply_container = document.getElementById('container-' + commentId);
+  const cover = document.getElementById('cover');
+
+  const divWithDefaultHeight = document.getElementById('expand-' + commentId);
+
+  btn_open.addEventListener('click', () => {
+    reply_container.classList.remove('hide');
+    reply_container.classList.add('reveal');
+    cover.style.display = 'block';
+
+
+    divWithDefaultHeight.style.height = '125px';
+  });
+
+  btn_close.addEventListener('click', () => {
+    reply_container.classList.remove('reveal');
+    reply_container.classList.add('hide');
+    cover.style.display = 'none';
+
+    divWithDefaultHeight.style.height = '125px';
+  });
+
+  cover.addEventListener('click', () => {
+    reply_container.classList.remove('reveal');
+    reply_container.classList.add('hide');
+    cover.style.display = 'none';
+
+
+    divWithDefaultHeight.style.height = '125px';
+  });
+
+  reply_container.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+}
+
+function show(commentId) {
+  console.log(commentId)
+  const btn_open = document.getElementById(commentId);
+  const show_reply_container = document.getElementById('reply-' + commentId);
+
+  btn_open.addEventListener('click', () => {
+  show_reply_container.classList.remove('hide');
+    });
+}
 
 </script>

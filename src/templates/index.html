@@ -25,6 +25,13 @@
     transform: translateX(100%); /* Di chuyển ảnh ra xa bên phải */
   }
 }
+
+}
+.custom a {
+color: #000000 !important; /* Màu chữ trắng và sử dụng !important để ghi đè lên các quy tắc khác */
+text-decoration: none; /* Loại bỏ gạch chân (underline) cho liên kết */
+font-size: 20px;
+}
 </style>
 
 
@@ -91,7 +98,7 @@
           <img class="card-img-top" src="{{ comic.img }}" alt="Card image cap">
         </div>
         <div class="text-container">
-          <a href="{{ url_for('info', index=comic.comic_id) }}"><p class="card-text open-text" style="font-size: larger;">{{ comic.name }}</p></a>
+          <p class="card-text open-text custom"><strong><span><a href="{{ url_for('info', index=comic.comic_id) }}">{{ comic.name }}</a></span></strong></p>
           <p class="card-text text-muted">
             {% if comic.volume == comic.name %}
                 Tập 1

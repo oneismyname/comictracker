@@ -77,9 +77,11 @@
             </div>
             {% for comic in values %}
             <div class="col-xl-2 col-md-4 col-6">
-              <div class="card">
-                  <img class="card-img-top" src="{{ comic.img }}" alt="Card image cap">
-              </div>
+                <a href="{{ url_for('info', index=comic.comic_id) }}">
+                  <div class="card">
+                      <img class="card-img-top" src="{{ comic.img }}" alt="Card image cap">
+                  </div>
+                </a>
               <div class="text-container">
                 <p class="card-text open-text custom"><strong><span><a href="{{ url_for('info', index=comic.comic_id) }}">{{ comic.name }}</a></span></strong></p>
                 <p class="card-text text-muted larger-font">
@@ -102,7 +104,6 @@
                     <p class="card-text edition">{{ comic.edition }}</p>
                   </div>
                 </div>
-                <div id="resultMessage"></div>
               </div>
             </div>
           {% endfor %}

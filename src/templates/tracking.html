@@ -38,9 +38,11 @@
     <div class="row cards">
     {% for comic in comics %}
     <div class="col-2 col-md-4 col-6 my-2">
-      <div class="card">
-        <img class="card-img-top" src="{{ comic.img_cover }}" alt="Card image cap">
-      </div>
+      <a href="{{ url_for('info', index=comic.id) }}">
+        <div class="card">
+          <img class="card-img-top" src="{{ comic.img_cover }}" alt="Card image cap">
+        </div>
+      </a>
       <div class="text-container">
           <p class="card-text open-text custom"><strong><span><a href="{{ url_for('info', index=comic.id) }}">{{ comic.name }}</a></span></strong></p>
         <div class="wrap">
@@ -54,7 +56,6 @@
             </button>
           </div>
         </div>
-        <div id="resultMessage_1"></div>
       </div>
     </div>
   {% endfor %}
@@ -76,9 +77,11 @@
         <div class="row">
           {% for comic in comic.items %}
             <div class="col-2 my-1">
-              <div class="card">
-                <img class="card-img-top" src="{{ comic.img_cover }}" alt="Card image cap">
-              </div>
+              <a href="{{ url_for('info', index=comic.id) }}">
+                <div class="card">
+                  <img class="card-img-top" src="{{ comic.img_cover }}" alt="Card image cap">
+                </div>
+              </a>
               <div class="text-container">
                 <p class="card-text open-text custom"><strong><span><a href="{{ url_for('info', index=comic.id) }}">{{ comic.name }}</a></span></strong></p>
                   <div class="wrap">
@@ -92,7 +95,6 @@
                     </button>
                   </div>
                 </div>
-                <div id="resultMessage_1"></div>
               </div>
             </div>
           {% endfor %}
