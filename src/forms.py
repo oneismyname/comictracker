@@ -46,9 +46,14 @@ class UpdateForm(FlaskForm):
 
 class CommentForm(FlaskForm):
     content = TextAreaField("Comment", validators=[DataRequired()])
-    submit = SubmitField("Post")
+    submit = SubmitField("Comment")
 
 
 class EditForm(FlaskForm):
     edit = TextAreaField("Edit", validators=[DataRequired()])
     submit = SubmitField("Edit")
+
+
+class ReplyForm(FlaskForm):
+    reply = TextAreaField("Edit", validators=[DataRequired()])
+    submit = SubmitField("Reply")

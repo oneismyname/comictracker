@@ -98,3 +98,11 @@
 .custom-border {
     border-top: 2px solid red; /* Độ đậm và màu đường border */
 }
+
+.larger-font {
+    font-size: 18px;
+}
+
+.medium-font {
+    font-size: 12px;
+}

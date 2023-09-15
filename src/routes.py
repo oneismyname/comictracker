@@ -11,7 +11,7 @@ import secrets
 
 from src import app, login_manager
 from .database import User, db, Comic, Mapping, Schedule, Checking, Comment
-from .forms import RegisterForm, LoginForm, AddForm, SearchForm, ForgotForm, UpdateForm, CommentForm, EditForm
+from .forms import RegisterForm, LoginForm, AddForm, SearchForm, ForgotForm, UpdateForm, CommentForm, EditForm, ReplyForm
 
 
 my_email = os.environ.get("email")
@@ -299,13 +299,13 @@ def follow():
             )
             db.session.add(new_follow)
             db.session.commit()
-        response = {"message": "Follow successfully!", "buttonText": "UnFollow"}
+        response = {"buttonText": "UnFollow"}
     else:
         with app.app_context():
             query = Mapping.query.filter(Mapping.comic_id == comic_id, Mapping.user_id == current_user.id).first()
             db.session.delete(query)
             db.session.commit()
-        response = {"message": "UnFollow successfully!", "buttonText": "Follow"}
+        response = {"buttonText": "Follow"}
     return jsonify(response)
 
 
@@ -385,22 +385,28 @@ def schedule():
             schedule = month_schedule(query)
             list_check = bought_or_not(schedule)
             current_month = f"{request.form['selected_month']}-{request.form['selected_year']}"
-            return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= list_check, current_month=current_month)
-        query = db.session.query(Schedule.release_date).filter(func.strftime('%Y-%m', Schedule.release_date) == datetime.today().strftime('%Y-%m')).distinct().order_by(Schedule.release_date).all()
+            return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= list_check,
+                                   current_month=current_month)
+        query = db.session.query(Schedule.release_date).\
+            filter(func.strftime('%Y-%m', Schedule.release_date) == datetime.today().
+                   strftime('%Y-%m')).distinct().order_by(Schedule.release_date).all()
         schedule = month_schedule(query)
         list_check = bought_or_not(schedule)
         current_month = datetime.today().strftime('%m-%Y')
-        return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= list_check, current_month=current_month)
+        return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= list_check,
+                               current_month=current_month)
     else:
         if request.method == "POST":
             query = selected_month_shedule()
             schedule = month_schedule(query)
-            return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= {})
+            current_month = f"{request.form['selected_month']}-{request.form['selected_year']}"
+            return render_template("schedule.html", user=current_user, dict_1= schedule, dict_2= {}, current_month=current_month)
         else:
+            current_month = datetime.today().strftime('%m-%Y')
             query = db.session.query(Schedule.release_date).filter(
                 func.strftime('%Y-%m', Schedule.release_date) == datetime.today().strftime('%Y-%m')).distinct().order_by(Schedule.release_date).all()
             schedule = month_schedule(query)
-            return render_template("schedule.html", user=current_user, dict_1=schedule, dict_2={})
+            return render_template("schedule.html", user=current_user, dict_1=schedule, dict_2={}, current_month=current_month)
 
 
 @app.route("/check", methods=["POST"])
@@ -417,13 +423,13 @@ def check():
                 price=query.price)
             db.session.add(new)
             db.session.commit()
-        response = {"message": "Check successfully!", "buttonText": "UnCheck"}
+        response = {"buttonText": "UnCheck"}
     else:
         with app.app_context():
             query = Checking.query.filter(Checking.schedule_id == comic_id, Checking.user_id == current_user.id).first()
             db.session.delete(query)
             db.session.commit()
-        response = {"message": "UnCheck successfully!", "buttonText": "Check"}
+        response = {"buttonText": "Check"}
 
     return jsonify(response)
 
@@ -517,32 +523,76 @@ def info(index):
             follow_check = "FALSE"
         form = CommentForm()
         if form.validate_on_submit():
-            with app.app_context():
-                new_comment = Comment(
-                    user_id = current_user.id,
-                    comic_id = index,
-                    time_post= datetime.today(),
-                    content= form.content.data
-                )
-                db.session.add(new_comment)
-                db.session.commit()
-                flash("Successfully post comment", 'success')
-                return redirect(url_for('info', index=index))
-        comment = Comment.query.filter(Comment.comic_id == index).all()
-        return render_template('info.html', comic=query, user=current_user, dict = list_check, follow_check=follow_check, index=index, first=first_comic, form=form, comment=comment)
+            new_comment = Comment(
+                user_id = current_user.id,
+                comic_id = index,
+                time_post= datetime.today(),
+                content= form.content.data)
+            new_comment.save()
+            flash("Successfully post comment", 'success')
+            return redirect(url_for('info', index=index))
+        edit_form = EditForm()
+        reply_form = ReplyForm()
+        page = request.args.get('page', 1, type=int)
+        comments = Comment.query.filter(Comment.comic_id == index, Comment.parent_id == None).order_by(Comment.time_post.desc()).paginate(page=page,
+                                                                                                       per_page=5)
+        return render_template('info.html', comic=query, user=current_user, dict = list_check,
+                               follow_check=follow_check,
+                               index=index,
+                               first=first_comic,
+                               form=form,
+                               comments=comments,
+                               edit_form=edit_form,
+                               reply_form=reply_form)
     else:
         form = CommentForm()
+        edit_form = EditForm()
+        reply_form =ReplyForm()
         if form.validate_on_submit():
             flash("Login to leave a comment", 'danger')
-        comment = Comment.query.filter(Comment.comic_id == index).all()
+        page = request.args.get('page', 1, type=int)
+        comments = Comment.query.filter(Comment.comic_id == index).order_by(Comment.time_post).paginate(page=page,
+                                                                                                       per_page=5)
         query = db.session.query(Schedule).filter(Schedule.comic_id == index).order_by(Schedule.release_date).all()
-        return render_template('info.html', comic=query, user=current_user, dict={}, index=index, first=query[0], form=form, comment=comment)
+        return render_template('info.html', comic=query, user=current_user, dict={}, index=index, first=query[0],
+                               form=form, comments=comments, edit_form=edit_form, reply_form=reply_form)
+
+
+def delete_nested_comments(comments):
+    for reply in comments.replies:
+        delete_nested_comments(reply)
+    db.session.delete(comments)
+    db.session.commit()
 
 
 @app.route("/delete/comment/<index>/<comic_id>")
 def delete_comment(index, comic_id):
     comment = Comment.query.filter(Comment.id == index).first()
-    db.session.delete(comment)
+    delete_nested_comments(comment)
+    return redirect(url_for('info', index=comic_id))
+
+
+@app.route("/edit/<index>/<comic_id>", methods=["POST"])
+def edit(index, comic_id):
+    comment = Comment.query.filter(Comment.id == index).first()
+    comment.content = request.form.get('edit')
     db.session.commit()
     return redirect(url_for('info', index=comic_id))
+
+
+@app.route("/reply/<index>/<comic_id>", methods=["POST"])
+def reply(index, comic_id):
+    if current_user.is_authenticated:
+        reply_comment = Comment(
+            user_id=current_user.id,
+            comic_id=comic_id,
+            time_post=datetime.today(),
+            content= request.form.get('reply'),
+            parent_id=index,
+        )
+        reply_comment.save()
+        return redirect(url_for('info', index=comic_id))
+    else:
+        flash("Login to leave a reply comment", 'danger')
+        return redirect(url_for('info', index=comic_id))
 
